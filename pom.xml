@@ -21,8 +21,8 @@ permissions and limitations under the License.  -->
   <description>DB Diff is a database schema comparison tool</description>
   <scm>
     <connection>scm:git:git://github.com/vecnatechnologies/dbDiff.git</connection>
-    <url>scm:git:git://github.com/vecnatechnologies/dbDiff.git</url>
-    <developerConnection>scm:git:git://github.com/vecnatechnologies/dbDiff.git</developerConnection>
+    <developerConnection>scm:git:git@github.com:vecnatechnologies/dbDiff.git</developerConnection>
+    <url>https://github.com/vecnatechnologies/dbDiff</url>
   </scm>
   <organization>
     <name>Vecna Technologies</name>
@@ -35,10 +35,17 @@ permissions and limitations under the License.  -->
       <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
     </license>
   </licenses>
+  <developers>
+    <developer>
+      <id>vecna</id>
+      <name>Vecna Technologies</name>
+      <email>opensource@vecna.com</email>
+    </developer>
+  </developers>
   <parent>
     <groupId>com.vecna.parent</groupId>
     <artifactId>open-parent-pom</artifactId>
-    <version>1.0.8-SNAPSHOT</version>
+    <version>1.2</version>
   </parent>
   <properties>
     <checkstyle.maxAllowedViolations>70</checkstyle.maxAllowedViolations>
