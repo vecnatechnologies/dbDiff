@@ -14,16 +14,11 @@ implied.  See the License for the specific language governing
 permissions and limitations under the License.  -->
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.vecna</groupId>
-  <artifactId>dbDiff-all</artifactId>
+  <artifactId>dbDiff-hibernate</artifactId>
   <version>1.1.3-SNAPSHOT</version>
-  <packaging>pom</packaging>
-  <name>DB Diff Reactor</name>
-  <description>DB Diff is a database schema comparison tool</description>
-  <scm>
-    <connection>scm:git:git://github.com/vecnatechnologies/dbDiff.git</connection>
-    <developerConnection>scm:git:git@github.com:vecnatechnologies/dbDiff.git</developerConnection>
-    <url>https://github.com/vecnatechnologies/dbDiff</url>
-  </scm>
+  <packaging>jar</packaging>
+  <name>DB Diff Hibernate Tools</name>
+  <description>Tools to compare live DB schema with Hibernate mappings</description>
   <organization>
     <name>Vecna Technologies</name>
     <url>http://vecna.com</url>
@@ -47,8 +42,37 @@ permissions and limitations under the License.  -->
     <artifactId>open-parent-pom</artifactId>
     <version>1.2</version>
   </parent>
-  <modules>
-    <module>core</module>
-    <module>hibernate</module>    
-  </modules>
+  <dependencies>
+    <dependency>
+      <groupId>org.hibernate</groupId>
+      <artifactId>hibernate-core</artifactId>
+      <version>3.6.7.Final</version>
+    </dependency>
+    <dependency>
+      <groupId>javassist</groupId>
+      <artifactId>javassist</artifactId>
+      <version>3.9.0.GA</version>
+      <type>jar</type>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.8</version>
+      <type>jar</type>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <version>1.2.144</version>
+      <type>jar</type>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.vecna</groupId>
+      <artifactId>dbDiff</artifactId>
+      <version>1.1.3-SNAPSHOT</version>
+    </dependency>
+  </dependencies>
 </project>

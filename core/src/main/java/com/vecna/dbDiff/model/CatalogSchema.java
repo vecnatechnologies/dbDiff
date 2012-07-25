@@ -6,7 +6,7 @@
  * obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
@@ -16,15 +16,12 @@
 
 package com.vecna.dbDiff.model;
 
-import org.apache.log4j.Logger;
 
 /**
  * Encapsulation for the current catalog/schema of interest.
  * @author dlopuch@vecna.com
  */
 public class CatalogSchema {
-  private static final Logger s_log = Logger.getLogger(CatalogSchema.class);
-
   /**
    * Default schema
    */
