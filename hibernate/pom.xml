@@ -44,6 +44,12 @@ permissions and limitations under the License.  -->
   </parent>
   <dependencies>
     <dependency>
+      <groupId>postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <version>8.4-702.jdbc3</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.hibernate</groupId>
       <artifactId>hibernate-core</artifactId>
       <version>4.1.7.Final</version>

@@ -12,7 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
  * implied.  See the License for the specific language governing
  * permissions and limitations under the License.
-*/
+ */
 
 package com.vecna.dbDiff.hibernate;
 
@@ -33,6 +33,7 @@ import org.hibernate.mapping.UniqueKey;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.vecna.dbDiff.model.CatalogSchema;
+import com.vecna.dbDiff.model.ColumnType;
 import com.vecna.dbDiff.model.db.Column;
 import com.vecna.dbDiff.model.db.ForeignKey;
 import com.vecna.dbDiff.model.db.Table;
@@ -47,20 +48,21 @@ import com.vecna.dbDiff.model.relationalDb.RelationalValidationException;
  */
 public class HibernateMappingsConverter {
   private static final String DEFAULT_KEY_SEQ = "1";
+  private static final String POSTGRE_SQL = "PostgreSQL";
 
   private static final ImmutableSet<Integer> NUMERIC_TYPES = ImmutableSet.of(
-    Types.BIGINT,
-    Types.BOOLEAN,
-    Types.BIT,
-    Types.DECIMAL,
-    Types.TINYINT,
-    Types.SMALLINT,
-    Types.INTEGER,
-    Types.FLOAT,
-    Types.DOUBLE,
-    Types.NUMERIC,
-    Types.REAL
-  );
+                                                                             Types.BIGINT,
+                                                                             Types.BOOLEAN,
+                                                                             Types.BIT,
+                                                                             Types.DECIMAL,
+                                                                             Types.TINYINT,
+                                                                             Types.SMALLINT,
+                                                                             Types.INTEGER,
+                                                                             Types.FLOAT,
+                                                                             Types.DOUBLE,
+                                                                             Types.NUMERIC,
+                                                                             Types.REAL
+      );
 
   private final CatalogSchema m_catalogSchema;
 
@@ -105,8 +107,10 @@ public class HibernateMappingsConverter {
     List<RelationalTable> tables = new ArrayList<RelationalTable>();
     @SuppressWarnings("unchecked")
     Iterator<org.hibernate.mapping.Table> mappedTables = hibernateConfiguration.getTableMappings();
+    Dialect dialect = getDialect(hibernateConfiguration);
+    HibernateSqlTypeMapper dataTypeMapper = createHibernateSqlTypeMapper(hibernateConfiguration);
     while (mappedTables.hasNext()) {
-      tables.add(convertTable(mappedTables.next(), getDialect(hibernateConfiguration), mapping));
+      tables.add(convertTable(mappedTables.next(), dialect, dataTypeMapper, mapping));
     }
 
     RelationalDatabase rdb = new RelationalDatabase();
@@ -114,8 +118,21 @@ public class HibernateMappingsConverter {
     return rdb;
   }
 
-  private RelationalTable convertTable(org.hibernate.mapping.Table mappedTable, Dialect dialect, Mapping mapping)
-  throws RelationalValidationException {
+  /**
+   * Creates an instance of HibernateSqlTypeMapper if it is defined.  Otherwise it returns null.
+   * @param hibernateConfiguration
+   * @return null or an instance of HibernateSqlTypeMapper
+   */
+  private HibernateSqlTypeMapper createHibernateSqlTypeMapper(Configuration hibernateConfiguration) {
+    Dialect dialect = getDialect(hibernateConfiguration);
+    String simpleName = dialect.getClass().getSimpleName();
+    boolean isPostgreSQL =  StringUtils.startsWithIgnoreCase(simpleName, POSTGRE_SQL);
+    return isPostgreSQL ? new PostgreSqlTypeMapper() : null;
+  }
+
+  private RelationalTable convertTable(org.hibernate.mapping.Table mappedTable, Dialect dialect,
+                                       HibernateSqlTypeMapper dataTypeMapper, Mapping mapping)
+                                           throws RelationalValidationException {
     RelationalTable table = new RelationalTable();
     Table tableTable = new Table();
 
@@ -134,7 +151,7 @@ public class HibernateMappingsConverter {
     int idx = 1;
     while (mappedColumns.hasNext()) {
       org.hibernate.mapping.Column mappedColumn = mappedColumns.next();
-      Column column = convertColumn(mappedColumn, mappedTable, idx++, dialect, mapping);
+      Column column = convertColumn(mappedColumn, mappedTable, idx++, dialect, dataTypeMapper, mapping);
       columns.add(column);
       if (mappedColumn.isUnique()) {
         indices.add(getUniqueIndex(table, column));
@@ -197,21 +214,21 @@ public class HibernateMappingsConverter {
   }
 
   private RelationalIndex convertIndex(Constraint mappedConstraint, RelationalTable table)
-  throws RelationalValidationException {
+      throws RelationalValidationException {
     @SuppressWarnings("unchecked")
     Iterator<org.hibernate.mapping.Column> mappedColumns = mappedConstraint.getColumnIterator();
     return convertIndex(null, mappedColumns, table);
   }
 
   private RelationalIndex convertIndex(Index mappedIndex, RelationalTable table)
-  throws RelationalValidationException {
+      throws RelationalValidationException {
     @SuppressWarnings("unchecked")
     Iterator<org.hibernate.mapping.Column> mappedColumns = mappedIndex.getColumnIterator();
     return convertIndex(StringUtils.lowerCase(mappedIndex.getName()), mappedColumns, table);
   }
 
   private RelationalIndex convertIndex(String name, Iterator<org.hibernate.mapping.Column> mappedColumns, RelationalTable table)
-  throws RelationalValidationException {
+      throws RelationalValidationException {
     List<Column> columns = new ArrayList<Column>();
 
     while (mappedColumns.hasNext()) {
@@ -267,10 +284,13 @@ public class HibernateMappingsConverter {
   }
 
   private Column convertColumn(org.hibernate.mapping.Column mappedColumn, org.hibernate.mapping.Table owner,
-                               int ordinal, Dialect dialect, Mapping mapping) {
+                               int ordinal, Dialect dialect, HibernateSqlTypeMapper dataTypeMapper, Mapping mapping) {
     Column column = new Column();
-
-    column.setType(mappedColumn.getSqlTypeCode(mapping));
+    ColumnType type = new ColumnType(mappedColumn.getSqlTypeCode(mapping), mappedColumn.getSqlType(dialect, mapping));
+    column.setColumnType(type);
+    if (dataTypeMapper != null) {
+      dataTypeMapper.mapType(column);
+    }
 
     if (NUMERIC_TYPES.contains(column.getType())) {
       if (mappedColumn.getPrecision() != org.hibernate.mapping.Column.DEFAULT_PRECISION) {
@@ -287,7 +307,7 @@ public class HibernateMappingsConverter {
     column.setName(mappedColumn.getName().toLowerCase());
 
     boolean notNull = !mappedColumn.isNullable()
-    || (owner.getPrimaryKey() != null && owner.getPrimaryKey().getColumns().contains(mappedColumn));
+        || (owner.getPrimaryKey() != null && owner.getPrimaryKey().getColumns().contains(mappedColumn));
     column.setIsNullable(!notNull);
 
     column.setCatalog(StringUtils.lowerCase(owner.getCatalog()));
@@ -295,7 +315,6 @@ public class HibernateMappingsConverter {
     column.setOrdinal(ordinal);
     column.setTable(owner.getName().toLowerCase());
 
-    column.setTypeName(mappedColumn.getSqlType(dialect, mapping));
     column.setDefault(mappedColumn.getDefaultValue());
 
     return column;

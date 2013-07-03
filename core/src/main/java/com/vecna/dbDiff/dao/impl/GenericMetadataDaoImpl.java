@@ -6,13 +6,13 @@
  * obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
  * implied.  See the License for the specific language governing
  * permissions and limitations under the License.
-*/
+ */
 
 package com.vecna.dbDiff.dao.impl;
 
@@ -31,6 +31,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.vecna.dbDiff.dao.MetadataDao;
 import com.vecna.dbDiff.model.CatalogSchema;
+import com.vecna.dbDiff.model.ColumnType;
 import com.vecna.dbDiff.model.TableType;
 import com.vecna.dbDiff.model.db.Column;
 import com.vecna.dbDiff.model.db.ForeignKey;
@@ -58,6 +59,7 @@ public class GenericMetadataDaoImpl implements MetadataDao {
   /**
    * {@inheritDoc}
    */
+  @Override
   public Set<Table> getTables(CatalogSchema catalogSchema, TableType type) throws SQLException {
     // Get the ResultSet of tables
     String[] tableTypes = {this.getTableTypeStr(type)};
@@ -98,13 +100,14 @@ public class GenericMetadataDaoImpl implements MetadataDao {
   protected ResultSet doGetTablesQuery(CatalogSchema catalogSchema, String[] tableTypes) throws SQLException {
     return getMetadata().getTables((catalogSchema == null ? null : catalogSchema.getCatalog()),
                                    (catalogSchema == null ? null : catalogSchema.getSchema()),
-                                    null, tableTypes);
+                                   null, tableTypes);
   }
 
 
   /**
    * {@inheritDoc}
    */
+  @Override
   public List<Column> getColumns(Table table) throws SQLException {
     ResultSet rs = getMetadata().getColumns(table.getCatalog(), table.getSchema(), table.getName(), null);
 
@@ -116,14 +119,13 @@ public class GenericMetadataDaoImpl implements MetadataDao {
       c.setTable(rs.getString(3));
 
       c.setName(rs.getString(4));
-      c.setType(rs.getInt(5));
-      c.setTypeName(rs.getString(6));
+      c.setColumnType(new ColumnType(rs.getInt(5), rs.getString(6)));
       c.setColumnSize(rs.getInt(7));
 
       //Nullability
       int nullable = rs.getInt(11);
       c.setIsNullable((DatabaseMetaData.columnNullable == nullable ? true :
-                        (DatabaseMetaData.columnNoNulls == nullable ? false : null)));
+        (DatabaseMetaData.columnNoNulls == nullable ? false : null)));
 
       c.setDefault(rs.getString(13));
       c.setOrdinal(rs.getInt(17));
@@ -135,6 +137,7 @@ public class GenericMetadataDaoImpl implements MetadataDao {
   /**
    * {@inheritDoc}
    */
+  @Override
   public List<ForeignKey> getForeignKeys(Table table) throws SQLException {
     ResultSet rs = getMetadata().getImportedKeys(table.getCatalog(), table.getSchema(), table.getName());
     List<ForeignKey> fks = new LinkedList<ForeignKey>();
@@ -163,6 +166,7 @@ public class GenericMetadataDaoImpl implements MetadataDao {
    * {@inheritDoc}
    * May be overridden by specific implementations
    */
+  @Override
   public String getTableTypeStr(TableType tableType) {
     switch (tableType) {
       case TABLE:
@@ -180,6 +184,7 @@ public class GenericMetadataDaoImpl implements MetadataDao {
   /**
    * {@inheritDoc}
    */
+  @Override
   public List<String> getPrimaryKeyColumns(Table table) throws SQLException {
     Map<Short, String> primaryKeys = Maps.newTreeMap();
     ResultSet rs = getMetadata().getPrimaryKeys(table.getCatalog(), table.getSchema(), table.getName());

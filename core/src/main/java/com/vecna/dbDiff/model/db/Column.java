@@ -6,17 +6,19 @@
  * obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
  * implied.  See the License for the specific language governing
  * permissions and limitations under the License.
-*/
+ */
 
 package com.vecna.dbDiff.model.db;
 
 import java.io.Serializable;
+
+import com.vecna.dbDiff.model.ColumnType;
 
 
 
@@ -35,7 +37,6 @@ public class Column implements Comparable<Column>, Serializable {
 
   // Column properties
   private String m_name;
-  private int m_type;
   private String m_default;
   private Boolean m_isNullable;
 
@@ -44,7 +45,8 @@ public class Column implements Comparable<Column>, Serializable {
   private Integer m_ordinal;
 
   private Boolean m_autoIncrement;
-  private String m_typeName;
+
+  private ColumnType m_columnType;
 
   /**
    * Set the catalog.
@@ -101,21 +103,6 @@ public class Column implements Comparable<Column>, Serializable {
    */
   public String getName() {
     return m_name;
-  }
-  /**
-   * Set the type, corresponds to java.sql.Types
-   * @param type The type to set
-   */
-  public void setType(int type) {
-
-    m_type = type;
-  }
-  /**
-   * Get the type, corresponds to java.sql.Types
-   * @return Returns the type
-   */
-  public int getType() {
-    return m_type;
   }
   /**
    * Set the default.
@@ -177,23 +164,39 @@ public class Column implements Comparable<Column>, Serializable {
   }
 
   /**
-   * @return the type name (e.g. float4, bigint, varchar(255))
+   * Get the type, corresponds to java.sql.Types
+   * @return Returns the type
    */
-  public String getTypeName() {
-    return m_typeName;
+  public int getType() {
+    return m_columnType.getType();
   }
 
   /**
-   * set the type name
-   * @param typeName the value to set
+   * @return the type name (e.g. float4, bigint, varchar(255))
    */
-  public void setTypeName(String typeName) {
-    m_typeName = typeName;
+  public String getTypeName() {
+    return m_columnType.getTypeCode();
+  }
+
+  /**
+   * @return the column type object
+   */
+  public ColumnType getColumnType() {
+    return m_columnType;
+  }
+
+  /**
+   * set the column type
+   * @param columnType the value to set
+   */
+  public void setColumnType(ColumnType columnType) {
+    m_columnType = columnType;
   }
 
   /**
    * {@inheritDoc}
    */
+  @Override
   public boolean equals(Object o) {
     if (!(o instanceof Column)) {
       return false;
@@ -205,6 +208,7 @@ public class Column implements Comparable<Column>, Serializable {
   /**
    * {@inheritDoc}
    */
+  @Override
   public int compareTo(Column o) {
     int ordComp = getOrdinal().compareTo(o.getOrdinal());
     if (ordComp == 0) {
