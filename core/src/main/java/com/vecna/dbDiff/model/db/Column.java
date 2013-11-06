@@ -106,10 +106,10 @@ public class Column implements Comparable<Column>, Serializable {
   }
   /**
    * Set the default.
-   * @param _default The default to set
+   * @param defaultVal The default to set
    */
-  public void setDefault(String _default) {
-    m_default = _default;
+  public void setDefault(String defaultVal) {
+    m_default = defaultVal;
   }
   /**
    * Get the default.

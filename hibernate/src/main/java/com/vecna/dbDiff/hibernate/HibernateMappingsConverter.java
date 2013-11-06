@@ -18,6 +18,7 @@ package com.vecna.dbDiff.hibernate;
 
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -48,7 +49,9 @@ import com.vecna.dbDiff.model.relationalDb.RelationalValidationException;
  */
 public class HibernateMappingsConverter {
   private static final String DEFAULT_KEY_SEQ = "1";
-  private static final String POSTGRE_SQL = "PostgreSQL";
+  private static final List<DbSpecificMappingInfo> DB_MAPPING =  Arrays.asList(new DbSpecificMappingInfo("PostgreSQL",
+                                                                                                         new DbNameTruncateInfo(63, 63),
+                                                                                                         new PostgreSqlTypeMapper()));
 
   private static final ImmutableSet<Integer> NUMERIC_TYPES = ImmutableSet.of(
                                                                              Types.BIGINT,
@@ -65,13 +68,47 @@ public class HibernateMappingsConverter {
       );
 
   private final CatalogSchema m_catalogSchema;
+  private final Configuration m_configuration;
+  private final Mapping m_mapping;
+  private final Dialect m_dialect;
+  private final DbSpecificMappingInfo m_dbSpecificMappingInfo;
+
+  /**
+   * Extract the name of the table as it would appear in the database
+   */
+  private String getTableName(org.hibernate.mapping.Table table) {
+    return m_dbSpecificMappingInfo.getTruncateInfo().truncateTableName(table.getName().toLowerCase());
+  }
+
+  /**
+   * Extract the name of the column as it would appear in the database
+   */
+  private String getColumnName(org.hibernate.mapping.Column column) {
+    return m_dbSpecificMappingInfo.getTruncateInfo().truncateColumnName(column.getName().toLowerCase());
+  }
 
   /**
    * Create a new converter instance
    * @param catalogSchema default catalog/schema information
+   * @param configuration hibernate configuration
+   * @param mapping hibernate mapping
    */
-  public HibernateMappingsConverter(CatalogSchema catalogSchema) {
+  public HibernateMappingsConverter(CatalogSchema catalogSchema, Configuration configuration, Mapping mapping) {
     m_catalogSchema = catalogSchema;
+    m_configuration = configuration;
+    m_mapping = mapping;
+
+    m_dialect = getDialect(m_configuration);
+    m_dbSpecificMappingInfo = getDbSpecificMappingInfo(m_dialect);
+  }
+
+  /**
+   * Create a new converted instance
+   * @param catalogSchema default catalog/schema information
+   * @param configuration hibernate configuration (the mapping will be built from the configuration)
+   */
+  public HibernateMappingsConverter(CatalogSchema catalogSchema, Configuration configuration) {
+    this(catalogSchema, configuration, configuration.buildMapping());
   }
 
   private Dialect getDialect(Configuration hibernateConfiguration) {
@@ -97,20 +134,33 @@ public class HibernateMappingsConverter {
   }
 
   /**
+   * Get an instance of {@link DbSpecificMappingInfo} for the target DB based on the dialect used.
+   * @param dialect the dialect to infer a {@link DbSpecificMappingInfo} from
+   * @return an instance of {@link DbSpecificMappingInfo} that suits the target DB
+   */
+  private DbSpecificMappingInfo getDbSpecificMappingInfo(Dialect dialect) {
+    String simpleName = dialect.getClass().getSimpleName();
+
+    for (DbSpecificMappingInfo info : DB_MAPPING) {
+      if (simpleName.startsWith(info.getShortDialectName())) {
+        return info;
+      }
+    }
+
+    return new DbSpecificMappingInfo("", DbNameTruncateInfo.noTruncate(), new NoopSqlTypeMapper());
+  }
+
+  /**
    * Convert Hibernate mappings to DbDiff RelationalDatabase
-   * @param hibernateConfiguration hibernate configuration
-   * @param mapping hibernate mapping
-   * @return a RelationalDatabase
+   * @return a RelationalDatabase representation of the hibernate mappings
    * @throws RelationalValidationException if resulting relational database model is invalid
    */
-  public RelationalDatabase convert(Configuration hibernateConfiguration, Mapping mapping) throws RelationalValidationException {
+  public RelationalDatabase convert() throws RelationalValidationException {
     List<RelationalTable> tables = new ArrayList<RelationalTable>();
-    @SuppressWarnings("unchecked")
-    Iterator<org.hibernate.mapping.Table> mappedTables = hibernateConfiguration.getTableMappings();
-    Dialect dialect = getDialect(hibernateConfiguration);
-    HibernateSqlTypeMapper dataTypeMapper = createHibernateSqlTypeMapper(hibernateConfiguration);
+    Iterator<org.hibernate.mapping.Table> mappedTables = m_configuration.getTableMappings();
+
     while (mappedTables.hasNext()) {
-      tables.add(convertTable(mappedTables.next(), dialect, dataTypeMapper, mapping));
+      tables.add(convertTable(mappedTables.next()));
     }
 
     RelationalDatabase rdb = new RelationalDatabase();
@@ -118,25 +168,10 @@ public class HibernateMappingsConverter {
     return rdb;
   }
 
-  /**
-   * Creates an instance of HibernateSqlTypeMapper if it is defined.  Otherwise it returns null.
-   * @param hibernateConfiguration
-   * @return null or an instance of HibernateSqlTypeMapper
-   */
-  private HibernateSqlTypeMapper createHibernateSqlTypeMapper(Configuration hibernateConfiguration) {
-    Dialect dialect = getDialect(hibernateConfiguration);
-    String simpleName = dialect.getClass().getSimpleName();
-    boolean isPostgreSQL =  StringUtils.startsWithIgnoreCase(simpleName, POSTGRE_SQL);
-    return isPostgreSQL ? new PostgreSqlTypeMapper() : null;
-  }
-
-  private RelationalTable convertTable(org.hibernate.mapping.Table mappedTable, Dialect dialect,
-                                       HibernateSqlTypeMapper dataTypeMapper, Mapping mapping)
-                                           throws RelationalValidationException {
+  private RelationalTable convertTable(org.hibernate.mapping.Table mappedTable) throws RelationalValidationException {
     RelationalTable table = new RelationalTable();
     Table tableTable = new Table();
-
-    tableTable.setName(StringUtils.lowerCase(mappedTable.getName()));
+    tableTable.setName(getTableName(mappedTable));
 
     tableTable.setSchema(m_catalogSchema.getSchema());
     tableTable.setCatalog(m_catalogSchema.getCatalog());
@@ -151,7 +186,7 @@ public class HibernateMappingsConverter {
     int idx = 1;
     while (mappedColumns.hasNext()) {
       org.hibernate.mapping.Column mappedColumn = mappedColumns.next();
-      Column column = convertColumn(mappedColumn, mappedTable, idx++, dialect, dataTypeMapper, mapping);
+      Column column = convertColumn(mappedColumn, mappedTable, idx++);
       columns.add(column);
       if (mappedColumn.isUnique()) {
         indices.add(getUniqueIndex(table, column));
@@ -191,7 +226,7 @@ public class HibernateMappingsConverter {
       @SuppressWarnings("unchecked")
       Iterator<org.hibernate.mapping.Column> pkColumns = mappedTable.getPrimaryKey().getColumnIterator();
       while (pkColumns.hasNext()) {
-        pkColumnNames.add(pkColumns.next().getName().toLowerCase());
+        pkColumnNames.add(getColumnName(pkColumns.next()));
       }
       table.setPkColumns(pkColumnNames);
     }
@@ -232,7 +267,7 @@ public class HibernateMappingsConverter {
     List<Column> columns = new ArrayList<Column>();
 
     while (mappedColumns.hasNext()) {
-      columns.add(table.getColumnByName(mappedColumns.next().getName().toLowerCase()));
+      columns.add(table.getColumnByName(getColumnName(mappedColumns.next())));
     }
     RelationalIndex index = new RelationalIndex();
     Table indexTable = new Table();
@@ -262,35 +297,32 @@ public class HibernateMappingsConverter {
 
     ForeignKey fkey = new ForeignKey();
     fkey.setFkCatalog(StringUtils.lowerCase(table.getCatalog()));
-    fkey.setFkColumn(column.getName().toLowerCase());
+    fkey.setFkColumn(getColumnName(column));
     fkey.setFkName(mappedKey.getName().toLowerCase());
 
     fkey.setFkSchema(m_catalogSchema.getSchema());
     fkey.setFkCatalog(m_catalogSchema.getCatalog());
 
-    fkey.setFkTable(table.getName().toLowerCase());
+    fkey.setFkTable(getTableName(table));
 
     fkey.setKeySeq(DEFAULT_KEY_SEQ);
 
-
     fkey.setPkCatalog(StringUtils.lowerCase(referencedTable.getCatalog()));
-    fkey.setPkColumn(referencedColumn.getName().toLowerCase());
+    fkey.setPkColumn(getColumnName(referencedColumn));
 
     fkey.setPkSchema(m_catalogSchema.getSchema());
     fkey.setPkCatalog(m_catalogSchema.getCatalog());
-    fkey.setPkTable(referencedTable.getName().toLowerCase());
+    fkey.setPkTable(getTableName(referencedTable));
 
     return fkey;
   }
 
-  private Column convertColumn(org.hibernate.mapping.Column mappedColumn, org.hibernate.mapping.Table owner,
-                               int ordinal, Dialect dialect, HibernateSqlTypeMapper dataTypeMapper, Mapping mapping) {
+  private Column convertColumn(org.hibernate.mapping.Column mappedColumn, org.hibernate.mapping.Table owner, int ordinal) {
     Column column = new Column();
-    ColumnType type = new ColumnType(mappedColumn.getSqlTypeCode(mapping), mappedColumn.getSqlType(dialect, mapping));
+    ColumnType type = new ColumnType(mappedColumn.getSqlTypeCode(m_mapping), mappedColumn.getSqlType(m_dialect, m_mapping));
     column.setColumnType(type);
-    if (dataTypeMapper != null) {
-      dataTypeMapper.mapType(column);
-    }
+
+    m_dbSpecificMappingInfo.getTypeMapper().mapType(column);
 
     if (NUMERIC_TYPES.contains(column.getType())) {
       if (mappedColumn.getPrecision() != org.hibernate.mapping.Column.DEFAULT_PRECISION) {
@@ -304,7 +336,7 @@ public class HibernateMappingsConverter {
     }
 
     column.setDefault(mappedColumn.getDefaultValue());
-    column.setName(mappedColumn.getName().toLowerCase());
+    column.setName(getColumnName(mappedColumn));
 
     boolean notNull = !mappedColumn.isNullable()
         || (owner.getPrimaryKey() != null && owner.getPrimaryKey().getColumns().contains(mappedColumn));
@@ -313,7 +345,7 @@ public class HibernateMappingsConverter {
     column.setCatalog(StringUtils.lowerCase(owner.getCatalog()));
     column.setSchema(StringUtils.lowerCase(owner.getSchema()));
     column.setOrdinal(ordinal);
-    column.setTable(owner.getName().toLowerCase());
+    column.setTable(getTableName(owner));
 
     column.setDefault(mappedColumn.getDefaultValue());
 

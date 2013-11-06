@@ -6,7 +6,7 @@
  * obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
@@ -57,14 +57,13 @@ public class HibernateSchemaValidator {
   public List<RdbCompareError> validate() throws RelationalValidationException, SQLException {
     String jdbcDriver = m_configuration.getProperty("hibernate.connection.driver_class");
     String jdbcUrl = m_configuration.getProperty("hibernate.connection.url");
-    String jdbcUser= m_configuration.getProperty("hibernate.connection.username");
+    String jdbcUser = m_configuration.getProperty("hibernate.connection.username");
     String jdbcPassword = m_configuration.getProperty("hibernate.connection.password");
 
     CatalogSchema catalogSchema = DefaultCatalogSchemaResolverFactory.getCatalogSchemaResolver()
     .resolveCatalogSchema(jdbcDriver, jdbcUrl);
 
-    RelationalDatabase hibernateSchema = new HibernateMappingsConverter(catalogSchema).convert(m_configuration,
-                                                                                               m_configuration.buildMapping());
+    RelationalDatabase hibernateSchema = new HibernateMappingsConverter(catalogSchema, m_configuration).convert();
 
     Connection conn;
 

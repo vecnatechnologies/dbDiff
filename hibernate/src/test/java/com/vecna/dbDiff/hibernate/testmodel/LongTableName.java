@@ -21,17 +21,10 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-/**
- * Test model
- * @author greg.zheng@vecna.com
- */
 @Entity
-@Table(name="book")
-class Book {
-
+@Table(name = "the_name_of_this_table_is_very_very_long_for_no_reason_whatsoever")
+public class LongTableName {
   private Long m_id;
-  private String m_title;
-  private boolean m_published;
 
   @Id @GeneratedValue
   public Long getId() {
@@ -41,21 +34,4 @@ class Book {
   public void setId(Long id) {
     m_id = id;
   }
-
-  public String getTitle() {
-    return m_title;
-  }
-
-  public void setTitle(String title) {
-    m_title = title;
-  }
-
-  public boolean isPublished() {
-    return m_published;
-  }
-
-  public void setPublished(boolean published) {
-    m_published = published;
-  }
-
 }

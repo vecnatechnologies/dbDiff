@@ -19,15 +19,15 @@ package com.vecna.dbDiff.hibernate;
 import com.vecna.dbDiff.model.db.Column;
 
 /**
- * This interface defines an API that should be implemented to map column data type between Hibernate and a database.
- *
- * @author greg.zheng@vecna.com
+ * This implementation of {@link HibernateSqlTypeMapper} does not modify the column types.
+ * @author ogolberg@vecna.com
  */
-public interface HibernateSqlTypeMapper {
-
+public class NoopSqlTypeMapper implements HibernateSqlTypeMapper {
   /**
-   * @param column a database table column that is created from Hibernate mapping
+   * {@inheritDoc}
    */
-  public void mapType(final Column column);
-
+  @Override
+  public void mapType(Column column) {
+    // noop
+  }
 }

@@ -16,13 +16,8 @@ implied.  See the License for the specific language governing
 permissions and limitations under the License.  -->
 <hibernate-configuration>
   <session-factory>
-    <property name="hibernate.dialect">org.hibernate.dialect.H2Dialect</property>
-    <property name="hibernate.connection.driver_class">org.postgresql.Driver</property>
-    <!-- Begin your unique DB configuration -->
-    <property name="hibernate.connection.url">jdbc:postgresql://localhost:5432/testdb</property>
-    <property name="hibernate.connection.username">root</property>
-    <property name="hibernate.connection.password">yoursecret</property>
-    <!-- End of your unique DB configuration -->
-    <mapping class="com.vecna.dbDiff.hibernate.testmodel.Book"/>
+    <property name="hibernate.dialect">org.hibernate.dialect.PostgreSQLDialect</property>
+    <mapping class="com.vecna.dbDiff.hibernate.testmodel.LongColumnName"/>
+    <mapping class="com.vecna.dbDiff.hibernate.testmodel.LongTableName"/>
   </session-factory>
 </hibernate-configuration>

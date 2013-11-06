@@ -19,19 +19,14 @@ package com.vecna.dbDiff.hibernate.testmodel;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 
-/**
- * Test model
- * @author greg.zheng@vecna.com
- */
 @Entity
-@Table(name="book")
-class Book {
-
+public class LongColumnName {
   private Long m_id;
-  private String m_title;
-  private boolean m_published;
+  private LongTableName m_stuff;
+  private boolean m_active;
 
   @Id @GeneratedValue
   public Long getId() {
@@ -42,20 +37,21 @@ class Book {
     m_id = id;
   }
 
-  public String getTitle() {
-    return m_title;
+  public boolean isActive() {
+    return m_active;
   }
 
-  public void setTitle(String title) {
-    m_title = title;
+  public void setActive(boolean active) {
+    m_active = active;
   }
 
-  public boolean isPublished() {
-    return m_published;
+  @ManyToOne(optional = false)
+  @JoinColumn(name = "the_name_of_this_column_is_very_very_long_for_no_reason_whatsoever")
+  public LongTableName getStuff() {
+    return m_stuff;
   }
 
-  public void setPublished(boolean published) {
-    m_published = published;
+  public void setStuff(LongTableName stuff) {
+    m_stuff = stuff;
   }
-
 }

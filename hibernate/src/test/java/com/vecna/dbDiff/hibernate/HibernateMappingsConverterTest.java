@@ -6,13 +6,13 @@
  * obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
  * implied.  See the License for the specific language governing
  * permissions and limitations under the License.
-*/
+ */
 
 package com.vecna.dbDiff.hibernate;
 
@@ -45,8 +45,7 @@ public class HibernateMappingsConverterTest extends TestCase {
     config.configure(configResource);
     config.buildMappings();
 
-    RelationalDatabase rdb = new HibernateMappingsConverter(CatalogSchema.defaultCatalogSchema())
-    .convert(config, config.buildMapping());
+    RelationalDatabase rdb = new HibernateMappingsConverter(CatalogSchema.defaultCatalogSchema(), config).convert();
 
     List<RelationalTable> tables = Lists.newArrayList(rdb.getTables());
     Collections.sort(tables);
@@ -174,5 +173,30 @@ public class HibernateMappingsConverterTest extends TestCase {
   public void testVarbinaryLength() throws Exception {
     assertNull("column size shouldn't be set for varbinary columns",
                getSortedTables("hibernate-binary.cfg.xml").get(0).getColumnByName("data").getColumnSize());
+  }
+
+  /**
+   * Tests Postgres-specific conversion (boolean SQL type and long table/column names)
+   */
+  public void testPostgresSpecificConversion() throws Exception {
+    List<RelationalTable> tables = getSortedTables("hibernate-postgres-quirks.cfg.xml");
+
+    RelationalTable lcTable = tables.get(0);
+
+    assertNotNull("long column names must be truncated to 63 characters",
+                  lcTable.getColumnByName("the_name_of_this_column_is_very_very_long_for_no_reason_whatsoe"));
+
+    Column booleanColumn = lcTable.getColumnByName("active");
+
+    assertNotNull("incorrect schema - cannot find the 'active' column", booleanColumn);
+    assertEquals("wrong boolean column type", -7, booleanColumn.getType());
+    assertEquals("wrong boolean column name", "bool", booleanColumn.getTypeName());
+
+    RelationalTable ltTable = tables.get(1);
+
+    assertEquals("long table names must be truncated to 63 characters",
+                 "the_name_of_this_table_is_very_very_long_for_no_reason_whatsoev",
+                 ltTable.getTable().getName());
+
   }
 }
