@@ -15,7 +15,7 @@ permissions and limitations under the License.  -->
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.vecna</groupId>
   <artifactId>dbDiff-all</artifactId>
-  <version>1.4</version>
+  <version>1.5-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>DB Diff Reactor</name>
   <description>DB Diff is a database schema comparison tool</description>
