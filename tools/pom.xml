@@ -14,11 +14,11 @@ implied.  See the License for the specific language governing
 permissions and limitations under the License.  -->
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.vecna</groupId>
-  <artifactId>dbDiff-hibernate</artifactId>
+  <artifactId>dbDiff-tools</artifactId>
   <version>1.5-SNAPSHOT</version>
   <packaging>jar</packaging>
-  <name>DB Diff Hibernate Tools</name>
-  <description>Tools to compare live DB schema with Hibernate mappings</description>
+  <name>DB Diff Tools</name>
+  <description>DB Diff Tools</description>
   <organization>
     <name>Vecna Technologies</name>
     <url>http://vecna.com</url>
@@ -43,43 +43,41 @@ permissions and limitations under the License.  -->
     <version>2.0</version>
     <relativePath/>
   </parent>
+  <properties>
+    <checkstyle.maxAllowedViolations>67</checkstyle.maxAllowedViolations>
+  </properties>
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>2.4</version>
+        <executions>
+          <execution>
+            <id>make-assembly</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+            <configuration>
+              <descriptorRefs>
+                <descriptorRef>jar-with-dependencies</descriptorRef>
+              </descriptorRefs>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
   <dependencies>
-    <dependency>
-      <groupId>postgresql</groupId>
-      <artifactId>postgresql</artifactId>
-      <version>8.4-702.jdbc3</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.hibernate</groupId>
-      <artifactId>hibernate-core</artifactId>
-      <version>4.1.7.Final</version>
-    </dependency>
-    <dependency>
-      <groupId>javassist</groupId>
-      <artifactId>javassist</artifactId>
-      <version>3.9.0.GA</version>
-      <type>jar</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.8</version>
-      <type>jar</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.h2database</groupId>
-      <artifactId>h2</artifactId>
-      <version>1.2.144</version>
-      <type>jar</type>
-      <scope>test</scope>
-    </dependency>
     <dependency>
       <groupId>com.vecna</groupId>
       <artifactId>dbDiff</artifactId>
-      <version>1.5-SNAPSHOT</version>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <version>9.1-901.jdbc3</version>
     </dependency>
   </dependencies>
 </project>

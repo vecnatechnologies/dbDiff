@@ -6,7 +6,7 @@
  * obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
@@ -25,6 +25,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -60,7 +61,7 @@ public class RelationalDatabaseBeanImpl {
     RelationalDatabase rdb = new RelationalDatabase();
 
     //First grab all the applicable indices.  Map them according to their names
-    Map<String, Table> allIndices = new HashMap<String, Table>();
+    Map<String, Table> allIndices = new HashMap<>();
     for (Table i : m_metadataDao.getTables(catalogSchema, TableType.INDEX)) {
       if (allIndices.containsKey(i.getName())) {
         throw new RelationalValidationException("Indexes with duplicate name exists in the specified catalog and schema! Name is: "
@@ -71,11 +72,11 @@ public class RelationalDatabaseBeanImpl {
 
     //Grab all the tables
     Set<Table> tables = m_metadataDao.getTables(catalogSchema, TableType.TABLE);
-    List<Table> sortedTs = new ArrayList<Table>(tables);
+    List<Table> sortedTs = new ArrayList<>(tables);
     Collections.sort(sortedTs);
 
     //Now build the relational tables
-    List<RelationalTable> rts = new LinkedList<RelationalTable>();
+    List<RelationalTable> rts = new LinkedList<>();
     for (Table t : sortedTs) {
       RelationalTable rt = new RelationalTable();
 
@@ -84,7 +85,7 @@ public class RelationalDatabaseBeanImpl {
       rt.setColumns(m_metadataDao.getColumns(t));
 
       //Foreign Keys
-      rt.setFks(m_metadataDao.getForeignKeys(t));
+      rt.setFks(new HashSet<>(m_metadataDao.getForeignKeys(t)));
 
       //Primary key
       rt.setPkColumns(m_metadataDao.getPrimaryKeyColumns(t));
@@ -130,7 +131,7 @@ public class RelationalDatabaseBeanImpl {
   }
 
   /**
-   * @param filename
+   * @param filename name of the file that stores a serialized {@link RelationalDatabase}
    * @return a deserialized RelationalDatabase
    * @throws IOException If error deserializing it
    * @throws ClassNotFoundException If problem deserializing it

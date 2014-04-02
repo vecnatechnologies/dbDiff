@@ -16,14 +16,15 @@
 
 package com.vecna.dbDiff.model;
 
-import org.apache.commons.lang.StringUtils;
+import java.util.Objects;
+
+
 
 /**
  * This class defines the data type of a database column.  It contains integer and String descriptions of a type.
  * @author greg.zheng@vecna.com
  */
 public class ColumnType {
-
   private final int m_type;
   private final String m_typeCode;
 
@@ -42,9 +43,12 @@ public class ColumnType {
    */
   @Override
   public boolean equals(Object t) {
-    return t instanceof ColumnType &&
-        m_type == ((ColumnType)t).getType() &&
-        StringUtils.equals(m_typeCode, ((ColumnType)t).getTypeCode());
+    if (t == null || getClass() != t.getClass()) {
+      return false;
+    } else {
+      ColumnType other = (ColumnType) t;
+      return m_type == other.getType() && Objects.equals(m_typeCode, other.getTypeCode());
+    }
   }
 
   /**
@@ -53,7 +57,7 @@ public class ColumnType {
    */
   @Override
   public int hashCode() {
-    return m_type + m_typeCode.hashCode();
+    return Objects.hash(m_type, m_typeCode);
   }
 
   /**

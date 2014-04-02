@@ -6,7 +6,7 @@
  * obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
@@ -28,9 +28,8 @@ import com.vecna.dbDiff.model.CatalogSchema;
  * @author ogolberg@vecna.com
  */
 class SQLServerCatalogSchemaResolver implements CatalogSchemaResolver {
-  /**
-   * {@inheritDoc}
-   */
+
+  @Override
   public CatalogSchema resolveCatalogSchema(String jdbcDriver, String jdbcUrl) {
     if (jdbcUrl == null) {
       throw new IllegalArgumentException("jdbc url is not defined");
@@ -39,8 +38,8 @@ class SQLServerCatalogSchemaResolver implements CatalogSchemaResolver {
     if (m.matches()) {
       return new CatalogSchema("dbo", m.group(1));
     } else {
-      throw new IllegalArgumentException("jdbc url " + jdbcUrl + " doesn't match the SQL server pattern, " +
-                                          "cannot determine schema name");
+      throw new IllegalArgumentException("jdbc url " + jdbcUrl + " doesn't match the SQL server pattern, "
+                                         + "cannot determine schema name");
     }
   }
 }

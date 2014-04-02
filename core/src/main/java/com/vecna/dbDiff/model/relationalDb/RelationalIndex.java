@@ -6,7 +6,7 @@
  * obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
@@ -18,11 +18,12 @@ package com.vecna.dbDiff.model.relationalDb;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.vecna.dbDiff.model.db.Column;
 import com.vecna.dbDiff.model.db.Table;
 
@@ -37,7 +38,7 @@ public class RelationalIndex implements Comparable<RelationalIndex>, Serializabl
   /** The Table for this RelationalIndex and subclasses */
   protected Table m_table;
 
-  private Map<String, Column> m_columnsByName = Maps.newLinkedHashMap(); //An internal search index of cols by name.
+  private Map<String, Column> m_columnsByName = new LinkedHashMap<>(); //An internal search index of cols by name.
 
   /**
    * Set the table.
@@ -46,6 +47,7 @@ public class RelationalIndex implements Comparable<RelationalIndex>, Serializabl
   public void setTable(Table table) {
     m_table = table;
   }
+
   /**
    * Get the table.
    * @return Returns the table
@@ -53,6 +55,7 @@ public class RelationalIndex implements Comparable<RelationalIndex>, Serializabl
   public Table getTable() {
     return m_table;
   }
+
   /**
    * Set the columns.
    * @param columns The columns to set
@@ -105,17 +108,24 @@ public class RelationalIndex implements Comparable<RelationalIndex>, Serializabl
   /**
    * {@inheritDoc}
    */
+  @Override
   public boolean equals(Object o) {
-    if (!(o instanceof RelationalIndex)) {
+    if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    RelationalIndex other = (RelationalIndex)o;
+    RelationalIndex other = (RelationalIndex) o;
     return m_table.equals(other.getTable());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getClass(), m_table);
   }
 
   /**
    * {@inheritDoc}
    */
+  @Override
   public int compareTo(RelationalIndex o) {
     return m_table.compareTo(o.getTable());
   }

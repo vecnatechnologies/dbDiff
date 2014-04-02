@@ -6,7 +6,7 @@
  * obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
@@ -42,7 +42,7 @@ public class RelationalTable extends RelationalIndex implements Serializable {
 
   private Multimap<List<String>, RelationalIndex> m_indicesByColumns;
 
-  private List<ForeignKey> m_fks;
+  private Set<ForeignKey> m_fks;
 
   private SetMultimap<String, ForeignKey> m_fksByName; //An internal search index of fk's by name
                                                     //Note that composite keys have the same name
@@ -65,7 +65,7 @@ public class RelationalTable extends RelationalIndex implements Serializable {
         Table i = ri.getTable();
         if ((i.getCatalog() != null && !i.getCatalog().equals(m_table.getCatalog()))
             || (i.getSchema() != null && !i.getSchema().equals(m_table.getSchema()))
-            || (i.getName() != null && m_table.getIndexNames() != null && !m_table.getIndexNames().contains(i.getName())) ) {
+            || (i.getName() != null && m_table.getIndexNames() != null && !m_table.getIndexNames().contains(i.getName()))) {
           throw new RelationalValidationException("Trying to add an index not recognized by this table: " + i);
         }
 
@@ -95,7 +95,7 @@ public class RelationalTable extends RelationalIndex implements Serializable {
    * @param fks The fks to set
    * @throws RelationalValidationException If mismatch between the added fk's and the table
    */
-  public void setFks(List<ForeignKey> fks) throws RelationalValidationException {
+  public void setFks(Set<ForeignKey> fks) throws RelationalValidationException {
     m_fks = fks;
     m_fksByName = HashMultimap.create();
     m_fksByTableColumn = HashMultimap.create();
@@ -107,7 +107,7 @@ public class RelationalTable extends RelationalIndex implements Serializable {
       for (ForeignKey fk : fks) {
         if ((fk.getFkCatalog() != null && !fk.getFkCatalog().equals(m_table.getCatalog()))
             || (fk.getFkSchema() != null && !fk.getFkSchema().equals(m_table.getSchema()))
-            || (fk.getFkTable() != null && !fk.getFkTable().equals(m_table.getName())) ) {
+            || (fk.getFkTable() != null && !fk.getFkTable().equals(m_table.getName()))) {
           throw new RelationalValidationException("Trying to add a fk which doesn't match this table:" + fk);
         }
 
@@ -126,13 +126,13 @@ public class RelationalTable extends RelationalIndex implements Serializable {
    * @return Returns a copy of the table's fks
    */
   public List<ForeignKey> getFks() {
-    return new LinkedList<ForeignKey>(m_fks);
+    return new LinkedList<>(m_fks);
   }
 
   /**
    * Retrieve a table's foreign keys by a constraint name.
    * @param name A foreign key name
-   * @return a set containing matching ForeignKeys or null if it doesn't exist
+   * @return a set containing matching ForeignKeys
    */
   public Set<ForeignKey> getFksByName(String name) {
     return m_fksByName.get(name);
@@ -160,7 +160,7 @@ public class RelationalTable extends RelationalIndex implements Serializable {
    * @param schema The schema of the referenced table.  Must be exact match (ie no wildcards)
    * @param table The name of the referenced table.  Must be exact match (ie no wildcards)
    * @param column The column being referenced.  Must be exact match (ie no wildcards)
-   * @return All foreign keys matching the specified reference, or null if none found
+   * @return All foreign keys matching the specified reference.
    */
   public Set<ForeignKey> getFksByReferencedCol(String catalog, String schema, String table, String column) {
     return m_fksByTableColumn.get(catalog + "." + schema + "." + table + "." + column);

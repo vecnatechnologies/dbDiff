@@ -17,6 +17,7 @@
 package com.vecna.dbDiff.model.db;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 import com.vecna.dbDiff.model.ColumnType;
 
@@ -203,6 +204,11 @@ public class Column implements Comparable<Column>, Serializable {
     }
     Column other = (Column)o;
     return getOrdinal().equals(other.getOrdinal()) && getName().equals(other.getName());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(m_ordinal, m_name);
   }
 
   /**

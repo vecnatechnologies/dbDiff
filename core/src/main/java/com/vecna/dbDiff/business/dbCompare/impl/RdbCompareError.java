@@ -6,7 +6,7 @@
  * obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
@@ -18,41 +18,34 @@ package com.vecna.dbDiff.business.dbCompare.impl;
 
 
 /**
+ * Represents a difference between two relational DB schemas.
+ *
  * @author dlopuch@vecna.com
  */
 public class RdbCompareError {
-  private RdbCompareErrorType m_errorType;
-  private String m_message;
-  
+  private final RdbCompareErrorType m_errorType;
+  private final String m_message;
+
+  /**
+   * Create a new instance.
+   *
+   * @param errorType type of schema difference.
+   * @param message descriptive message.
+   */
   public RdbCompareError(RdbCompareErrorType errorType, String message) {
     m_errorType = errorType;
     m_message = message;
   }
-  
+
   /**
-   * Set the errorType.
-   * @param errorType The errorType to set
-   */
-  public void setErrorType(RdbCompareErrorType errorType) {
-    this.m_errorType = errorType;
-  }
-  /**
-   * Get the errorType.
-   * @return Returns the errorType
+   * @return type of the schema difference.
    */
   public RdbCompareErrorType getErrorType() {
     return m_errorType;
   }
+
   /**
-   * Set the message.
-   * @param message The message to set
-   */
-  public void setMessage(String message) {
-    this.m_message = message;
-  }
-  /**
-   * Get the message.
-   * @return Returns the message
+   * @return descriptive message.
    */
   public String getMessage() {
     return m_message;

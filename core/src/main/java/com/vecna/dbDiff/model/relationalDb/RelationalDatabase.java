@@ -46,8 +46,8 @@ public class RelationalDatabase implements Serializable {
     m_tablesByName = Maps.newLinkedHashMap();
     for (RelationalTable rt : tables) {
       if (m_tablesByName.containsKey(rt.getTable().getName())) {
-        throw new RelationalValidationException("A RelationalDatabase supports only unique table names of tables of the same " +
-        		"catalog/schema. Non-unique name found: " + rt.getTable().getName());
+        throw new RelationalValidationException("A RelationalDatabase supports only unique table names of tables of the same "
+            + "catalog/schema. Non-unique name found: " + rt.getTable().getName());
       }
       m_tablesByName.put(rt.getTable().getName(), rt);
     }

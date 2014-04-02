@@ -6,7 +6,7 @@
  * obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
@@ -37,7 +37,7 @@ public interface MetadataDao {
    * @param catalogSchema a desired catalog and schema, if any. May be null.
    * @param type A type of table to get
    * @return a Set of Tables
-   * @throws SQLException If exception retrieving names
+   * @throws SQLException on SQL exception
    */
   Set<Table> getTables(CatalogSchema catalogSchema, TableType type) throws SQLException;
 
@@ -45,7 +45,7 @@ public interface MetadataDao {
    * Gets all of the columns for a Table
    * @param table a particular Table to search.  Should have catalog, schema, and name set.
    * @return A List of columns, sorted by ordinal.
-   * @throws SQLException If exception
+   * @throws SQLException on SQL exception
    */
   List<Column> getColumns(Table table) throws SQLException;
 
@@ -53,7 +53,7 @@ public interface MetadataDao {
    * Gets all the foreign keys in a table (ie all the keys pointing from the specified table to some other table)
    * @param table an importing table
    * @return A List of foreign keys, sorted by referenced catalog, referenced schema, referenced name, and key sequence
-   * @throws SQLException
+   * @throws SQLException on SQL exception
    */
   List<ForeignKey> getForeignKeys(Table table) throws SQLException;
 
@@ -68,7 +68,7 @@ public interface MetadataDao {
    * Returns the list of primary key columns
    * @param table the table to retrieve pk information for
    * @return the list of primary key columns if the table has a primary key or null if it doesn't
-   * @throws SQLException
+   * @throws SQLException on SQL exception
    */
   List<String> getPrimaryKeyColumns(Table table) throws SQLException;
 }

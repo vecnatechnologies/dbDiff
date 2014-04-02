@@ -56,9 +56,6 @@ public class GenericMetadataDaoImpl implements MetadataDao {
     }
   }
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public Set<Table> getTables(CatalogSchema catalogSchema, TableType type) throws SQLException {
     // Get the ResultSet of tables
@@ -95,7 +92,7 @@ public class GenericMetadataDaoImpl implements MetadataDao {
    * @param catalogSchema the desired catalog and schema names
    * @param tableTypes the desired table types, specific for the particular implementation
    * @return The ResultSet of the getTables() call
-   * @throws SQLException
+   * @throws SQLException on SQL exception
    */
   protected ResultSet doGetTablesQuery(CatalogSchema catalogSchema, String[] tableTypes) throws SQLException {
     return getMetadata().getTables((catalogSchema == null ? null : catalogSchema.getCatalog()),
@@ -104,9 +101,6 @@ public class GenericMetadataDaoImpl implements MetadataDao {
   }
 
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public List<Column> getColumns(Table table) throws SQLException {
     ResultSet rs = getMetadata().getColumns(table.getCatalog(), table.getSchema(), table.getName(), null);
@@ -124,8 +118,8 @@ public class GenericMetadataDaoImpl implements MetadataDao {
 
       //Nullability
       int nullable = rs.getInt(11);
-      c.setIsNullable((DatabaseMetaData.columnNullable == nullable ? true :
-        (DatabaseMetaData.columnNoNulls == nullable ? false : null)));
+      c.setIsNullable((DatabaseMetaData.columnNullable == nullable ? true
+          : (DatabaseMetaData.columnNoNulls == nullable ? false : null)));
 
       c.setDefault(rs.getString(13));
       c.setOrdinal(rs.getInt(17));
@@ -134,9 +128,6 @@ public class GenericMetadataDaoImpl implements MetadataDao {
     return cols;
   }
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public List<ForeignKey> getForeignKeys(Table table) throws SQLException {
     ResultSet rs = getMetadata().getImportedKeys(table.getCatalog(), table.getSchema(), table.getName());
@@ -162,10 +153,6 @@ public class GenericMetadataDaoImpl implements MetadataDao {
   }
 
 
-  /**
-   * {@inheritDoc}
-   * May be overridden by specific implementations
-   */
   @Override
   public String getTableTypeStr(TableType tableType) {
     switch (tableType) {

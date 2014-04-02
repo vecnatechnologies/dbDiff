@@ -32,6 +32,13 @@ public class DbNameTruncateInfo {
   private final Integer m_maxColumnNameLength;
   private final Integer m_maxTableNameLength;
 
+  /**
+   * Truncate a string to a certain number of characters.
+   * @param s the string to truncate.
+   * @param max the maximum number of characters (or null).
+   * @return same string if <code>max</code> is <code>null</code> or <code>max</code> is less than the length of the string
+   * or the string truncated to <code>max</code> characters otherwise.
+   */
   private String truncate(String s, Integer max) {
     if (max == null || max >= s.length()) {
       return s;

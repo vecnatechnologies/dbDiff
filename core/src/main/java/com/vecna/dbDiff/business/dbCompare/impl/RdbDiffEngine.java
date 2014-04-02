@@ -6,7 +6,7 @@
  * obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
@@ -16,7 +16,9 @@
 
 package com.vecna.dbDiff.business.dbCompare.impl;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
@@ -43,7 +45,12 @@ import com.vecna.dbDiff.model.relationalDb.RelationalTable;
  * @author dlopuch@vecna.com
  */
 public class RdbDiffEngine {
-
+  /**
+   * Compare two relational DB schemas.
+   * @param refDb reference database.
+   * @param testDb test database.
+   * @return the list of DB schema differences.
+   */
   public List<RdbCompareError> compareRelationalDatabase(RelationalDatabase refDb, RelationalDatabase testDb) {
     List<RdbCompareError> errors = new LinkedList<RdbCompareError>();
 
@@ -56,10 +63,9 @@ public class RdbDiffEngine {
         errors.add(e);
       } else {
         // If the table exists in ref db, compare the two
-        compareRelationalTables(refT, testT, errors);
+        errors.addAll(compareRelationalTables(refT, testT));
       }
     }
-
 
     // Check every reference table exists in the test db
     for (RelationalTable refT : refDb.getTables()) {
@@ -77,23 +83,34 @@ public class RdbDiffEngine {
    * Compares two relational tables
    * @param refT a reference RelationalTable
    * @param testT a test RelationalTable
-   * @param errors a non-null list of errors to append new ones to
+   * @return list of table differences.
    */
-  public void compareRelationalTables(RelationalTable refT, RelationalTable testT, List<RdbCompareError> errors) {
+  public List<RdbCompareError> compareRelationalTables(RelationalTable refT, RelationalTable testT) {
+    List<RdbCompareError> errors = new ArrayList<>();
+
     // Compare primary key
-    comparePrimaryKeys(refT, testT, errors);
+    errors.addAll(comparePrimaryKeys(refT, testT));
 
     //Compare Columns
-    compareColumns(refT, testT, errors);
+    errors.addAll(compareColumns(refT, testT));
 
     //Compare foreign keys
-    compareForeignKeys(refT, testT, errors);
+    errors.addAll(compareForeignKeys(refT, testT));
 
     // Compare indices
-    compareIndices(refT, testT, errors);
+    errors.addAll(compareIndices(refT, testT));
+
+    return errors;
   }
 
-  private void comparePrimaryKeys(RelationalTable refT, RelationalTable testT, List<RdbCompareError> errors) {
+  /**
+   * Compare primary keys.
+   * @param refT reference table.
+   * @param testT test table.
+   * @return primary key differences.
+   */
+  private List<RdbCompareError> comparePrimaryKeys(RelationalTable refT, RelationalTable testT) {
+    List<RdbCompareError> errors = new ArrayList<>();
     if (CollectionUtils.isEmpty(refT.getPkColumns())) {
       if (CollectionUtils.isNotEmpty(testT.getPkColumns())) {
         errors.add(new RdbCompareError(RdbCompareErrorType.UNEXPECTED_PRIMARY_KEY,
@@ -111,6 +128,7 @@ public class RdbDiffEngine {
                                      "Test primary key " + testT.getTable().getName() + testT.getPkColumns()
                                      + " differs from reference primary key " + refT.getTable().getName() + refT.getPkColumns()));
     }
+    return errors;
   }
 
   /**
@@ -118,9 +136,10 @@ public class RdbDiffEngine {
    * Any errors get added to the errors param list.
    * @param refT A reference table
    * @param testT A test table
-   * @param errors A list of errors to add any new errors to
+   * @return the list of column differences.
    */
-  private void compareColumns(RelationalTable refT, RelationalTable testT, List<RdbCompareError> errors) {
+  private List<RdbCompareError> compareColumns(RelationalTable refT, RelationalTable testT) {
+    List<RdbCompareError> errors = new ArrayList<>();
     //First check every test column exists in the reference table
     for (Column testC : testT.getColumns()) {
       Column refC = refT.getColumnByName(testC.getName());
@@ -140,14 +159,14 @@ public class RdbDiffEngine {
           }
           RdbCompareError e = new RdbCompareError(errorType,
                                   "Test column '" + testT.getTable().getName() + "." + testC.getName() + "' has wrong type.  "
-                                  + "Expected '" + refC.getType()+ "/" + refC.getTypeName()
+                                  + "Expected '" + refC.getType() + "/" + refC.getTypeName()
                                   + "' but got '" + testC.getType() + "/" + testC.getTypeName() + "'");
           errors.add(e);
         }
         if (!Objects.equal(refC.getDefault(), testC.getDefault())) {
           RdbCompareError e = new RdbCompareError(RdbCompareErrorType.COL_DEFAULT_MISMATCH,
                                     "Test column '" + testT.getTable().getName() + "." + testC.getName() + "' has wrong Default.  "
-                                    + "Expected '" + refC.getDefault()+ "' but got '" + testC.getDefault() + "'");
+                                    + "Expected '" + refC.getDefault() + "' but got '" + testC.getDefault() + "'");
           errors.add(e);
         }
         if (!Objects.equal(refC.getIsNullable(), testC.getIsNullable())) {
@@ -181,6 +200,77 @@ public class RdbDiffEngine {
         errors.add(e);
       }
     }
+
+    return errors;
+  }
+
+  /**
+   * Determine why a test foreign key is not in the reference database.
+   * @param testFk test foreign key which is not in the reference db.
+   * @param testT test table the foreign key belongs to.
+   * @param refT reference table that matches the test table.
+   * @return a {@link ForeignKeyCompareError} specific to the foreign key.
+   */
+  private ForeignKeyCompareError getUnexpectedFkError(ForeignKey testFk, RelationalTable testT, RelationalTable refT) {
+    Set<ForeignKey> refFksByName = refT.getFksByName(testFk.getFkName());
+
+    if (!refFksByName.isEmpty()) {
+      for (ForeignKey refFk : refFksByName) {
+        if (refFk.equalsFrom(testFk) && refFk.equalsReference(testFk)) {
+          if (refFk.getKeySeq().equals(testFk.getKeySeq())) {
+            //FK with the same signature, name, and sequence number... something else is wrong
+            return new ForeignKeyCompareError(RdbCompareErrorType.UNKNOWN_FK_DIFF,
+                                              "Test fk \"" + testFk + "\" has unknown difference with fk \""
+                                                  + refFk + "\".  Check the fk .equals() method and its hash-generation.", refFk);
+          } else {
+            //FK with the same signature and name, but wrong key sequence
+            return new ForeignKeyCompareError(RdbCompareErrorType.FK_SEQUENCE_MISMATCH,
+                                              "Test fk '" + testFk.getFkName() + "' in table '" + testT.getTable().getName() + "' has"
+                                                  + " wrong key sequence. Expected '" + refFk.getKeySeq() + "' but got '"
+                                                  + testFk.getKeySeq() + "'", refFk);
+          }
+        }
+      }
+      // No reference key by this name has the same to and from.  Misconfigured key.
+      String matchingFkNames = Joiner.on(", ").join(refFksByName);
+
+      return new ForeignKeyCompareError(RdbCompareErrorType.MISCONFIGURED_FK,
+                                        "Test fk \"" + testFk + "\" has the same name as the following reference FK "
+                                            + "constraint(s) but different signature: " + matchingFkNames, null);
+    } else {
+      //Try to find a match based on reference
+      Set<ForeignKey> refFksByRefCol = refT.getFksByReferencedCol(testFk.getPkCatalog(), testFk.getPkSchema(),
+                                                                  testFk.getPkTable(), testFk.getPkColumn());
+      if (!refFksByRefCol.isEmpty()) {
+        for (ForeignKey refFk : refFksByRefCol) {
+          if (refFk.equalsFrom(testFk)) {
+            // We have a fk with same signature
+            if (refFk.getFkName().equals(testFk.getFkName())) {
+              //Same signature and name, unknown difference
+              return new ForeignKeyCompareError(RdbCompareErrorType.UNKNOWN_FK_DIFF,
+                                                "Test fk \"" + testFk + "\" has unknown difference with fk \""
+                                                    + refFk + "\".  Check the fk .equals() method and its hash-generation.", refFk);
+            } else {
+              //Same signature but different name: misnamed FK
+              return new ForeignKeyCompareError(RdbCompareErrorType.MISNAMED_FK,
+                                                "Test fk \"" + testFk + "\" looks the same as the following fk but wrong"
+                                                    + " name: \"" + refFk + "\".", refFk);
+            }
+          }
+        }
+
+        String matchingFks = Joiner.on(", ").join(refFksByRefCol);
+
+        return new ForeignKeyCompareError(RdbCompareErrorType.MISCONFIGURED_FK,
+                                          "Test fk \"" + testFk + "\" references the same columns as the following reference FK "
+                                              + "constraint(s) but applies to a different column: " + matchingFks, null);
+
+      } else {
+        //Unexpected FK
+        return new ForeignKeyCompareError(RdbCompareErrorType.UNEXPECTED_FK,
+                                          "Test foreign key \"" + testFk + "\" is unexpected!", null);
+      }
+    }
   }
 
   /**
@@ -188,110 +278,39 @@ public class RdbDiffEngine {
    * Any errors get added to the errors param list.
    * @param refT A reference table
    * @param testT A test table
-   * @param errors A list of errors to add any new errors to
+   * @return foreign key differences.
    */
-  private void compareForeignKeys(RelationalTable refT, RelationalTable testT, List<RdbCompareError> errors) {
-    List<ForeignKey> refFks = new LinkedList<ForeignKey>(refT.getFks());
+  private List<RdbCompareError> compareForeignKeys(RelationalTable refT, RelationalTable testT) {
+    List<RdbCompareError> errors = new ArrayList<>();
+    Set<ForeignKey> refFks = new HashSet<>(refT.getFks());
 
-    //Check that every test fk exists in the reference fk's
-    testFks:
       for (ForeignKey testFk : testT.getFks()) {
-        // Check by complete equality
-        if (refFks.contains(testFk)) {
-          //key is fine, remove it from the refFk's list and advance to the next fk
-          refFks.remove(testFk);
-          continue;
-
-        //The test fk doesn't exist exactly in the reference set.  Figure out what's wrong
-        } else {
-          //Try to find a match based on constraint name
-          Set<ForeignKey> refFksByName = refT.getFksByName(testFk.getFkName());
-          if (CollectionUtils.isNotEmpty(refFksByName)) {
-            for (ForeignKey refFk : refFksByName) {
-              if (refFk.equalsFrom(testFk) && refFk.equalsReference(testFk)) {
-                if (refFk.getKeySeq().equals(testFk.getKeySeq())) {
-                  //FK with the same signature, name, and sequence number... something else is wrong
-                  RdbCompareError e = new RdbCompareError(RdbCompareErrorType.UNKNOWN_FK_DIFF,
-                                            "Test fk \"" + getFkDesc(testFk) + "\" has unknown difference with fk \""
-                                            + getFkDesc(refFk) +"\".  Check the fk .equals() method and its hash-generation.");
-                  errors.add(e);
-                  refFks.remove(refFk);
-                  continue testFks;
-                } else {
-                  //FK with the same signature and name, but wrong key sequence
-                  RdbCompareError e = new RdbCompareError(RdbCompareErrorType.FK_SEQUENCE_MISMATCH,
-                                            "Test fk '" + testFk.getFkName() + "' in table '" + testT.getTable().getName() + "' has"
-                                            + " wrong key sequence. Expected '" + refFk.getKeySeq() + "' but got '"
-                                            + testFk.getKeySeq() + "'");
-                  errors.add(e);
-                  refFks.remove(refFk);
-                  continue testFks;
-                }
-              }
-            }
-            // No reference key by this name has the same to and from.  Misconfigured key.
-            String matchingFkNames = new String();
-            boolean delim = false;
-            for (ForeignKey fk : refFksByName) {
-              matchingFkNames += (delim ? ", \"" : "\"") + getFkDesc(fk) + "\"";
-              delim = true;
-            }
-            RdbCompareError e = new RdbCompareError(RdbCompareErrorType.MISCONFIGURED_FK,
-                                      "Test fk \"" + getFkDesc(testFk) + "\" has the same name as the following reference FK "
-                                      + "constraint(s) but different signature: " + matchingFkNames);
-            errors.add(e);
-            continue testFks;
-          } else {
-
-            //Try to find a match based on reference
-            Set<ForeignKey> refFksByRefCol = refT.getFksByReferencedCol(testFk.getPkCatalog(), testFk.getPkSchema(),
-                                                                        testFk.getPkTable(), testFk.getPkColumn());
-            if (CollectionUtils.isNotEmpty(refFksByRefCol)) {
-              for (ForeignKey refFk : refFksByRefCol) {
-                if (refFk.equalsFrom(testFk)) {
-                  // We have a fk with same signature
-                  if (refFk.getFkName().equals(testFk.getFkName())) {
-                    //Same signature and name, unknown difference
-                    RdbCompareError e = new RdbCompareError(RdbCompareErrorType.UNKNOWN_FK_DIFF,
-                                              "Test fk \"" + getFkDesc(testFk) + "\" has unknown difference with fk \""
-                                              + getFkDesc(refFk) +"\".  Check the fk .equals() method and its hash-generation.");
-                    errors.add(e);
-                    refFks.remove(refFk);
-                    continue testFks;
-                  } else {
-                    //Same signature but different name: misnamed FK
-                    RdbCompareError e = new RdbCompareError(RdbCompareErrorType.MISNAMED_FK,
-                                              "Test fk \"" + getFkDesc(testFk) + "\" looks the same as the following fk but wrong"
-                                              + " name: \"" + getFkDesc(refFk) +"\".");
-                    errors.add(e);
-                    refFks.remove(refFk);
-                    continue testFks;
-                  }
-                }
-              }
-            } else {
-              //Unexpected FK
-              RdbCompareError e = new RdbCompareError(RdbCompareErrorType.UNEXPECTED_FK,
-                                          "Test foreign key \"" + getFkDesc(testFk) + "\" is unexpected!");
-              errors.add(e);
-            }
+        if (!refFks.remove(testFk)) {
+          ForeignKeyCompareError error = getUnexpectedFkError(testFk, testT, refT);
+          if (error.getSimilarFk() != null) {
+            refFks.remove(error.getSimilarFk());
           }
-
+          errors.add(error);
         }
       }
-    //End testing the fk's
 
     //Missing FK's: Any test fk that had some partial match against a reference fk would have had the reference fk removed.
     //Any remaining reference fk's are missing ones.
     for (ForeignKey fk : refFks) {
-      RdbCompareError e = new RdbCompareError(RdbCompareErrorType.MISSING_FK,
-                                              "Reference foreign key \"" + getFkDesc(fk) + "\" is missing!");
-      errors.add(e);
+      errors.add(new RdbCompareError(RdbCompareErrorType.MISSING_FK, "Reference foreign key \"" + fk + "\" is missing!"));
     }
+    return errors;
   }
 
-  private void compareIndices(final RelationalTable refT, final RelationalTable testT, List<RdbCompareError> errors) {
+  /**
+   * Compare the indices of two tables.
+   * @param refT reference table.
+   * @param testT test table.
+   * @return the list of index differences.
+   */
+  private List<RdbCompareError> compareIndices(final RelationalTable refT, final RelationalTable testT) {
     Multimap<List<String>, RelationalIndex> refIndices = ArrayListMultimap.create(refT.getIndicesByColumns());
+    List<RdbCompareError> errors = new ArrayList<>();
 
     for (final Entry<List<String>, Collection<RelationalIndex>> entry : testT.getIndicesByColumns().asMap().entrySet()) {
       Collection<RelationalIndex> matchingRefIndices = refIndices.removeAll(entry.getKey());
@@ -335,6 +354,7 @@ public class RdbDiffEngine {
                                          + " of test indices "
                                          + Joiner.on(", ").join(Collections2.transform(testIndexNames,
                                                                                       new Function<String, String>() {
+            @Override
             public String apply(String from) {
               return "\"" + getIndexDesc(from, entry.getKey(), testT) + "\"";
             }
@@ -353,32 +373,41 @@ public class RdbDiffEngine {
                                          + " of reference indices "
                                          + Joiner.on(", ").join(Collections2.transform(refIndexNames,
                                                                                       new Function<String, String>() {
+            @Override
             public String apply(String from) {
               return "\"" + getIndexDesc(from, entry.getKey(), refT) + "\"";
             }
           })) + " are missing!"));
         }
-
-
       }
     }
+    return errors;
   }
 
+  /**
+   * Create a human-readable description of a table index.
+   * @param indexName index name.
+   * @param columnNames names of the columns.
+   * @param owner the table that the index belongs to.
+   * @return a human-readable description of the index.
+   */
   private String getIndexDesc(String indexName, Collection<String> columnNames, RelationalTable owner) {
     return (indexName == null ? "<UNKNOWN>" : indexName) + "="
     + owner.getTable().getName() + "(" + Joiner.on(',').join(columnNames) + ")";
   }
 
+  /**
+   * Create a human-readable description of a table index.
+   * @param idx index model.
+   * @param owner the table that owns the index.
+   * @return a human-readable description of the index.
+   */
   private String getIndexDesc(RelationalIndex idx, RelationalTable owner) {
     return getIndexDesc(idx.getTable().getName(), Collections2.transform(idx.getColumns(), new Function<Column, String>() {
+      @Override
       public String apply(Column from) {
         return from.getName();
       }
     }), owner);
-  }
-
-  private String getFkDesc(ForeignKey fk) {
-    return fk.getFkName() + "(" + fk.getKeySeq() + "): " + fk.getFkTable() + "(" + fk.getFkColumn() + ")-->" + fk.getPkTable()
-           + "(" + fk.getPkColumn() + ")";
   }
 }

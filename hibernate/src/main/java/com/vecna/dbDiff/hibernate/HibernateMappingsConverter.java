@@ -20,8 +20,10 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 import org.hibernate.cfg.Configuration;
@@ -32,7 +34,6 @@ import org.hibernate.mapping.Index;
 import org.hibernate.mapping.UniqueKey;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
 import com.vecna.dbDiff.model.CatalogSchema;
 import com.vecna.dbDiff.model.ColumnType;
 import com.vecna.dbDiff.model.db.Column;
@@ -41,7 +42,6 @@ import com.vecna.dbDiff.model.db.Table;
 import com.vecna.dbDiff.model.relationalDb.RelationalDatabase;
 import com.vecna.dbDiff.model.relationalDb.RelationalIndex;
 import com.vecna.dbDiff.model.relationalDb.RelationalTable;
-import com.vecna.dbDiff.model.relationalDb.RelationalValidationException;
 
 /**
  * Creates DbDiff relational database model from Hibernate mappings
@@ -74,14 +74,18 @@ public class HibernateMappingsConverter {
   private final DbSpecificMappingInfo m_dbSpecificMappingInfo;
 
   /**
-   * Extract the name of the table as it would appear in the database
+   * Extract the name of the table as it would appear in the database.
+   * @param table hibernate table model.
+   * @return the name of the table as it would appear in the database.
    */
   private String getTableName(org.hibernate.mapping.Table table) {
     return m_dbSpecificMappingInfo.getTruncateInfo().truncateTableName(table.getName().toLowerCase());
   }
 
   /**
-   * Extract the name of the column as it would appear in the database
+   * Extract the name of the column as it would appear in the database.
+   * @param column hibernate column model.
+   * @return the name of the column as it would appear in the database.
    */
   private String getColumnName(org.hibernate.mapping.Column column) {
     return m_dbSpecificMappingInfo.getTruncateInfo().truncateColumnName(column.getName().toLowerCase());
@@ -111,6 +115,11 @@ public class HibernateMappingsConverter {
     this(catalogSchema, configuration, configuration.buildMapping());
   }
 
+  /**
+   * Extract the dialect from a hibernate configuration.
+   * @param hibernateConfiguration hibernate configuration.
+   * @return the dialect object.
+   */
   private Dialect getDialect(Configuration hibernateConfiguration) {
     String dialectClassName = hibernateConfiguration.getProperty("hibernate.dialect");
     if (dialectClassName == null) {
@@ -153,10 +162,9 @@ public class HibernateMappingsConverter {
   /**
    * Convert Hibernate mappings to DbDiff RelationalDatabase
    * @return a RelationalDatabase representation of the hibernate mappings
-   * @throws RelationalValidationException if resulting relational database model is invalid
    */
-  public RelationalDatabase convert() throws RelationalValidationException {
-    List<RelationalTable> tables = new ArrayList<RelationalTable>();
+  public RelationalDatabase convert() {
+    List<RelationalTable> tables = new ArrayList<>();
     Iterator<org.hibernate.mapping.Table> mappedTables = m_configuration.getTableMappings();
 
     while (mappedTables.hasNext()) {
@@ -168,7 +176,12 @@ public class HibernateMappingsConverter {
     return rdb;
   }
 
-  private RelationalTable convertTable(org.hibernate.mapping.Table mappedTable) throws RelationalValidationException {
+  /**
+   * Convert a Hibernate table model to the DbDiff table model.
+   * @param mappedTable hibernate table.
+   * @return DbDiff table.
+   */
+  private RelationalTable convertTable(org.hibernate.mapping.Table mappedTable) {
     RelationalTable table = new RelationalTable();
     Table tableTable = new Table();
     tableTable.setName(getTableName(mappedTable));
@@ -178,8 +191,8 @@ public class HibernateMappingsConverter {
 
     table.setTable(tableTable);
 
-    List<Column> columns = Lists.newArrayList();
-    List<RelationalIndex> indices = Lists.newArrayList();
+    List<Column> columns = new ArrayList<>();
+    List<RelationalIndex> indices = new ArrayList<>();
 
     @SuppressWarnings("unchecked")
     Iterator<org.hibernate.mapping.Column> mappedColumns = mappedTable.getColumnIterator();
@@ -195,7 +208,7 @@ public class HibernateMappingsConverter {
 
     table.setColumns(columns);
 
-    List<ForeignKey> fkeys = new ArrayList<ForeignKey>();
+    Set<ForeignKey> fkeys = new HashSet<>();
     @SuppressWarnings("unchecked")
     Iterator<org.hibernate.mapping.ForeignKey> mappedKeys = mappedTable.getForeignKeyIterator();
     while (mappedKeys.hasNext()) {
@@ -222,7 +235,7 @@ public class HibernateMappingsConverter {
 
     if (mappedTable.getPrimaryKey() != null) {
       indices.add(convertIndex(mappedTable.getPrimaryKey(), table));
-      List<String> pkColumnNames = Lists.newArrayList();
+      List<String> pkColumnNames = new ArrayList<>();
       @SuppressWarnings("unchecked")
       Iterator<org.hibernate.mapping.Column> pkColumns = mappedTable.getPrimaryKey().getColumnIterator();
       while (pkColumns.hasNext()) {
@@ -236,7 +249,13 @@ public class HibernateMappingsConverter {
     return table;
   }
 
-  private RelationalIndex getUniqueIndex(RelationalTable table, Column column) throws RelationalValidationException {
+  /**
+   * Create a {@link RelationalIndex} representation of a column's unique constraint.
+   * @param table the table that contains the column.
+   * @param column the column with a unique constraint.
+   * @return a {@link RelationalIndex} representation of the constraint.
+   */
+  private RelationalIndex getUniqueIndex(RelationalTable table, Column column) {
     RelationalIndex index = new RelationalIndex();
     Table tableDef = new Table();
     tableDef.setCatalog(table.getTable().getCatalog());
@@ -248,23 +267,39 @@ public class HibernateMappingsConverter {
     return index;
   }
 
-  private RelationalIndex convertIndex(Constraint mappedConstraint, RelationalTable table)
-      throws RelationalValidationException {
+  /**
+   * Convert a Hibernate constraint (unique key, primary key) representation to a {@link RelationalIndex}.
+   * @param mappedConstraint hibernate constraint.
+   * @param table the table the constraint applies to.
+   * @return a {@link RelationalIndex} representation of the same constraint
+   */
+  private RelationalIndex convertIndex(Constraint mappedConstraint, RelationalTable table) {
     @SuppressWarnings("unchecked")
     Iterator<org.hibernate.mapping.Column> mappedColumns = mappedConstraint.getColumnIterator();
     return convertIndex(null, mappedColumns, table);
   }
 
-  private RelationalIndex convertIndex(Index mappedIndex, RelationalTable table)
-      throws RelationalValidationException {
+  /**
+   * Convert a Hibernate index representation to a {@link RelationalIndex}.
+   * @param mappedIndex hibernate index.
+   * @param table the table the index applies to.
+   * @return a {@link RelationalIndex} representation of the index.
+   */
+  private RelationalIndex convertIndex(Index mappedIndex, RelationalTable table) {
     @SuppressWarnings("unchecked")
     Iterator<org.hibernate.mapping.Column> mappedColumns = mappedIndex.getColumnIterator();
     return convertIndex(StringUtils.lowerCase(mappedIndex.getName()), mappedColumns, table);
   }
 
-  private RelationalIndex convertIndex(String name, Iterator<org.hibernate.mapping.Column> mappedColumns, RelationalTable table)
-      throws RelationalValidationException {
-    List<Column> columns = new ArrayList<Column>();
+  /**
+   * Convert a Hibernate index model to a {@link RelationalIndex}.
+   * @param name index name.
+   * @param mappedColumns columns spanned by the index.
+   * @param table the table that the index belongs to.
+   * @return a {@link RelationalIndex} representation of the index.
+   */
+  private RelationalIndex convertIndex(String name, Iterator<org.hibernate.mapping.Column> mappedColumns, RelationalTable table) {
+    List<Column> columns = new ArrayList<>();
 
     while (mappedColumns.hasNext()) {
       columns.add(table.getColumnByName(getColumnName(mappedColumns.next())));
@@ -282,6 +317,11 @@ public class HibernateMappingsConverter {
     return index;
   }
 
+  /**
+   * Convert a Hibernate foreign key object to a {@link ForeignKey}.
+   * @param mappedKey hibernate foreign key.
+   * @return a {@link ForeignKey} representation of the same foreign key.
+   */
   private ForeignKey convertForeignKey(org.hibernate.mapping.ForeignKey mappedKey) {
     org.hibernate.mapping.Column column = mappedKey.getColumn(0);
     org.hibernate.mapping.Table table = mappedKey.getTable();
@@ -317,6 +357,13 @@ public class HibernateMappingsConverter {
     return fkey;
   }
 
+  /**
+   * Convert a Hibernate column representation to a {@link Column} object.
+   * @param mappedColumn the Hibernate column.
+   * @param owner the table that contains the column.
+   * @param ordinal column's ordinal in the table.
+   * @return a {@link Column} representation of the same column.
+   */
   private Column convertColumn(org.hibernate.mapping.Column mappedColumn, org.hibernate.mapping.Table owner, int ordinal) {
     Column column = new Column();
     ColumnType type = new ColumnType(mappedColumn.getSqlTypeCode(m_mapping), mappedColumn.getSqlType(m_dialect, m_mapping));

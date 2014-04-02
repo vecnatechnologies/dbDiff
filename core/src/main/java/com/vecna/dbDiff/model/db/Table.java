@@ -6,7 +6,7 @@
  * obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
@@ -17,26 +17,25 @@
 package com.vecna.dbDiff.model.db;
 
 import java.io.Serializable;
+import java.util.Objects;
 import java.util.Set;
-
-
 
 /**
  * A model of a DB Table
  * @author dlopuch@vecna.com
  */
 public class Table implements Comparable<Table>, Serializable {
-  
+
   private static final long serialVersionUID = 7278038316870729732L;
-  
+
   private String m_catalog;
   private String m_schema;
-  
+
   private String m_name;
   private String m_type;
   private String m_typeName;
-  
-  private Set<String> m_indexNames; 
+
+  private Set<String> m_indexNames;
 
   /**
    * Set the table's name.
@@ -53,7 +52,7 @@ public class Table implements Comparable<Table>, Serializable {
   public String getName() {
     return m_name;
   }
-  
+
   /**
    * Set the catalog.
    * @param catalog The catalog to set
@@ -85,22 +84,29 @@ public class Table implements Comparable<Table>, Serializable {
   public String getSchema() {
     return m_schema;
   }
-  
-  
+
+
   /**
    * {@inheritDoc}
    */
+  @Override
   public boolean equals(Object o) {
     if (!(o instanceof Column)) {
       return false;
     }
     Table other = (Table)o;
-    return m_name.equals(other.getName());
+    return Objects.equals(m_name, other.getName());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(17, m_name);
   }
 
   /**
    * {@inheritDoc}
    */
+  @Override
   public int compareTo(Table o) {
     return m_name.compareTo(o.getName());
   }
@@ -154,6 +160,4 @@ public class Table implements Comparable<Table>, Serializable {
   public Set<String> getIndexNames() {
     return m_indexNames;
   }
-
-  
 }

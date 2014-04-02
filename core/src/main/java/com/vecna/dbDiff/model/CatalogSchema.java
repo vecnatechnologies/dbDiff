@@ -33,49 +33,34 @@ public class CatalogSchema {
   public static final String DEFAULT_CATALOG = null;
 
   /**
-   * Default catalog/schema combination
+   * @return default catalog/schema.
    */
   public static CatalogSchema defaultCatalogSchema() {
     return new CatalogSchema(DEFAULT_CATALOG, DEFAULT_SCHEMA);
   }
 
-  private String m_catalog;
-  private String m_schema;
+  private final String m_catalog;
+  private final String m_schema;
 
   /**
    * Convenience constructor
-   * @param catalog
-   * @param schema
+   * @param catalog catalog
+   * @param schema schema
    */
   public CatalogSchema(String catalog, String schema) {
-    setCatalog(catalog);
-    setSchema(schema);
+    m_catalog = catalog;
+    m_schema = schema;
   }
 
   /**
-   * Set the catalog.
-   * @param catalog The catalog to set
-   */
-  public void setCatalog(String catalog) {
-    m_catalog = catalog;
-  }
-  /**
-   * Get the catalog.
-   * @return Returns the catalog
+   * @return the catalog.
    */
   public String getCatalog() {
     return m_catalog;
   }
+
   /**
-   * Set the schema.
-   * @param schema The schema to set
-   */
-  public void setSchema(String schema) {
-    m_schema = schema;
-  }
-  /**
-   * Get the schema.
-   * @return Returns the schema
+   * @return the schema.
    */
   public String getSchema() {
     return m_schema;

@@ -6,7 +6,7 @@
  * obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
@@ -21,14 +21,13 @@ package com.vecna.dbDiff.model.relationalDb;
  * An exception which is thrown when db objects are added to relationalDB objects, but some relation doesn't match.
  * @author dlopuch@vecna.com
  */
-public class RelationalValidationException extends Exception {
-
-  private static final long serialVersionUID = -7585236875656510305L;
-  
+@SuppressWarnings("serial")
+public class RelationalValidationException extends RuntimeException {
   /**
-   * @param e
+   * Create a new exception.
+   * @param message message.
    */
-  public RelationalValidationException(String e) {
-    super(e);
+  public RelationalValidationException(String message) {
+    super(message);
   }
 }
