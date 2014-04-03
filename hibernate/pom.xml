@@ -15,7 +15,7 @@ permissions and limitations under the License.  -->
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.vecna</groupId>
   <artifactId>dbDiff-hibernate</artifactId>
-  <version>1.5-SNAPSHOT</version>
+  <version>1.5</version>
   <packaging>jar</packaging>
   <name>DB Diff Hibernate Tools</name>
   <description>Tools to compare live DB schema with Hibernate mappings</description>
@@ -41,7 +41,7 @@ permissions and limitations under the License.  -->
     <groupId>com.vecna.parent</groupId>
     <artifactId>open-parent-pom</artifactId>
     <version>2.0</version>
-    <relativePath/>
+    <relativePath />
   </parent>
   <dependencies>
     <dependency>
@@ -79,7 +79,7 @@ permissions and limitations under the License.  -->
     <dependency>
       <groupId>com.vecna</groupId>
       <artifactId>dbDiff</artifactId>
-      <version>1.5-SNAPSHOT</version>
+      <version>1.5</version>
     </dependency>
   </dependencies>
 </project>

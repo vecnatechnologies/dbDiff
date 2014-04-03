@@ -15,7 +15,7 @@ permissions and limitations under the License.  -->
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.vecna</groupId>
   <artifactId>dbDiff-tools</artifactId>
-  <version>1.5-SNAPSHOT</version>
+  <version>1.5</version>
   <packaging>jar</packaging>
   <name>DB Diff Tools</name>
   <description>DB Diff Tools</description>
@@ -41,7 +41,7 @@ permissions and limitations under the License.  -->
     <groupId>com.vecna.parent</groupId>
     <artifactId>open-parent-pom</artifactId>
     <version>2.0</version>
-    <relativePath/>
+    <relativePath />
   </parent>
   <properties>
     <checkstyle.maxAllowedViolations>67</checkstyle.maxAllowedViolations>
