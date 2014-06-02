@@ -17,6 +17,7 @@
 package com.vecna.dbDiff.hibernate;
 
 import java.sql.Types;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -33,24 +34,21 @@ import com.vecna.dbDiff.model.db.ForeignKey;
 import com.vecna.dbDiff.model.relationalDb.RelationalDatabase;
 import com.vecna.dbDiff.model.relationalDb.RelationalIndex;
 import com.vecna.dbDiff.model.relationalDb.RelationalTable;
-import com.vecna.dbDiff.model.relationalDb.RelationalValidationException;
+import com.vecna.dbDiff.model.relationalDb.InconsistentSchemaException;
 
 /**
  * Unit tests for {@link HibernateMappingsConverter}
  * @author ogolberg@vecna.com
  */
 public class HibernateMappingsConverterTest extends TestCase {
-  private List<RelationalTable> getSortedTables(String configResource) throws RelationalValidationException {
+  @SuppressWarnings("deprecation")
+  private List<RelationalTable> getSortedTables(String configResource) throws InconsistentSchemaException {
     AnnotationConfiguration config = new AnnotationConfiguration();
     config.configure(configResource);
     config.buildMappings();
 
     RelationalDatabase rdb = new HibernateMappingsConverter(CatalogSchema.defaultCatalogSchema(), config).convert();
-
-    List<RelationalTable> tables = Lists.newArrayList(rdb.getTables());
-    Collections.sort(tables);
-
-    return tables;
+    return new ArrayList<>(rdb.getTables());
   }
 
   /**
@@ -62,9 +60,9 @@ public class HibernateMappingsConverterTest extends TestCase {
     assertEquals(3, tables.size());
 
     // validate table names
-    assertEquals("bar", tables.get(0).getTable().getName());
-    assertEquals("bar_foo", tables.get(1).getTable().getName());
-    assertEquals("foo", tables.get(2).getTable().getName());
+    assertEquals("bar", tables.get(0).getName());
+    assertEquals("bar_foo", tables.get(1).getName());
+    assertEquals("foo", tables.get(2).getName());
 
     // validate PKeys
     assertEquals(Lists.newArrayList("id"), Lists.newArrayList(tables.get(0).getPkColumns()));
@@ -92,29 +90,29 @@ public class HibernateMappingsConverterTest extends TestCase {
     assertEquals(2, barIndices.size());
     Collection<RelationalIndex> pkeyIndex = barIndices.get(Lists.newArrayList("id"));
     assertEquals(1, pkeyIndex.size());
-    assertNull(pkeyIndex.iterator().next().getTable().getName());
+    assertNull(pkeyIndex.iterator().next().getName());
 
     Collection<RelationalIndex> uniqueIndex = barIndices.get(Lists.newArrayList("name", "idx"));
     assertEquals(1, uniqueIndex.size());
-    assertNull(uniqueIndex.iterator().next().getTable().getName());
+    assertNull(uniqueIndex.iterator().next().getName());
 
     Multimap<List<String>, RelationalIndex> barFooIndices = tables.get(1).getIndicesByColumns();
     assertEquals(1, barFooIndices.size());
     pkeyIndex = barFooIndices.get(Lists.newArrayList("bar_id", "mapkey"));
     assertEquals(1, pkeyIndex.size());
-    assertNull(pkeyIndex.iterator().next().getTable().getName());
+    assertNull(pkeyIndex.iterator().next().getName());
 
     Multimap<List<String>, RelationalIndex> fooIndices = tables.get(2).getIndicesByColumns();
     assertEquals(3, fooIndices.size());
     pkeyIndex = fooIndices.get(Lists.newArrayList("id"));
     assertEquals(1, pkeyIndex.size());
-    assertNull(pkeyIndex.iterator().next().getTable().getName());
+    assertNull(pkeyIndex.iterator().next().getName());
     uniqueIndex = fooIndices.get(Lists.newArrayList("name"));
     assertEquals(1, uniqueIndex.size());
-    assertNull(uniqueIndex.iterator().next().getTable().getName());
+    assertNull(uniqueIndex.iterator().next().getName());
     Collection<RelationalIndex> actualIndex = fooIndices.get(Lists.newArrayList("name", "time"));
     assertEquals(1, actualIndex.size());
-    assertEquals("foo_idx_name_time", actualIndex.iterator().next().getTable().getName());
+    assertEquals("foo_idx_name_time", actualIndex.iterator().next().getName());
 
     // validate columns
     List<Column> barColumns = Lists.newArrayList(tables.get(0).getColumns());
@@ -196,7 +194,7 @@ public class HibernateMappingsConverterTest extends TestCase {
 
     assertEquals("long table names must be truncated to 63 characters",
                  "the_name_of_this_table_is_very_very_long_for_no_reason_whatsoev",
-                 ltTable.getTable().getName());
+                 ltTable.getName());
 
   }
 }

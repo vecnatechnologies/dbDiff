@@ -16,29 +16,21 @@
 
 package com.vecna.dbDiff.model.relationalDb;
 
-import com.vecna.dbDiff.model.CatalogSchema;
 
 /**
- * A relational table model which contains appropriate columns and indices
+ * Indicates that the schema reported by the database is inconsistent (e.g. an index refers
+ * to a column that doesn't exist in the table).
+ *
  * @author dlopuch@vecna.com
+ * @author ogolberg@vecna.com
  */
-public class RelationalIndex extends BaseColumnContainer {
+@SuppressWarnings("serial")
+public class InconsistentSchemaException extends RuntimeException {
   /**
-   * Create a new index.
-   * @param catalogSchema catalog/schema.
-   * @param name index name.
+   * Create a new exception.
+   * @param message message.
    */
-  public RelationalIndex(CatalogSchema catalogSchema, String name) {
-    super(catalogSchema, name);
-  }
-
-  /**
-   * Create a new index.
-   * @param catalog catalog.
-   * @param schema schema.
-   * @param name index name.
-   */
-  public RelationalIndex(String catalog, String schema, String name) {
-    super(catalog, schema, name);
+  public InconsistentSchemaException(String message) {
+    super(message);
   }
 }

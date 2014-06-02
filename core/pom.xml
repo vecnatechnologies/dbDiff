@@ -45,12 +45,6 @@ permissions and limitations under the License.  -->
   </parent>
   <dependencies>
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.8</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
       <version>1.5.8</version>
@@ -69,6 +63,25 @@ permissions and limitations under the License.  -->
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
       <version>16.0.1</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+      <version>1.4</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.8</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <version>1.2.144</version>
+      <type>jar</type>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 </project>

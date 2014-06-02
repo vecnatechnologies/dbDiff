@@ -50,7 +50,6 @@ permissions and limitations under the License.  -->
   </parent>
   <modules>
     <module>core</module>
-    <module>hibernate</module>    
-    <module>tools</module>
+    <module>hibernate</module>
   </modules>
 </project>

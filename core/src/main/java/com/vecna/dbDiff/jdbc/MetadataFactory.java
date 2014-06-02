@@ -12,22 +12,21 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
  * implied.  See the License for the specific language governing
  * permissions and limitations under the License.
-*/
+ */
 
-package com.vecna.dbDiff.model.relationalDb;
+package com.vecna.dbDiff.jdbc;
 
+import java.io.Closeable;
+import java.sql.DatabaseMetaData;
 
 /**
- * An exception which is thrown when db objects are added to relationalDB objects, but some relation doesn't match.
- * @author dlopuch@vecna.com
+ * API for retrieving database metadata.
+ *
+ * @author ogolberg@vecna.com
  */
-@SuppressWarnings("serial")
-public class RelationalValidationException extends RuntimeException {
+public interface MetadataFactory extends Closeable {
   /**
-   * Create a new exception.
-   * @param message message.
+   * @return database metadata.
    */
-  public RelationalValidationException(String message) {
-    super(message);
-  }
+  DatabaseMetaData getMetadata();
 }

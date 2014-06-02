@@ -16,7 +16,6 @@
 
 package com.vecna.dbDiff.model.relationalDb;
 
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -27,8 +26,8 @@ import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.SetMultimap;
+import com.vecna.dbDiff.model.CatalogSchema;
 import com.vecna.dbDiff.model.db.ForeignKey;
-import com.vecna.dbDiff.model.db.Table;
 
 /**
  * A model of a table possibly containing indexes and foreign keys
@@ -36,9 +35,28 @@ import com.vecna.dbDiff.model.db.Table;
  * Note: Currently supports only single-row foreign keys and unique index names (ie from a single schema/catalog)
  * @author dlopuch@vecna.com
  */
-public class RelationalTable extends RelationalIndex implements Serializable {
+public class RelationalTable extends BaseColumnContainer {
+  /**
+   * Create a new table.
+   * @param catalogSchema catalog/schema.
+   * @param name table name.
+   */
+  public RelationalTable(CatalogSchema catalogSchema, String name) {
+    super(catalogSchema, name);
+  }
 
-  private static final long serialVersionUID = 5286855806964968051L;
+  /**
+   * Create a new table.
+   * @param catalog catalog.
+   * @param schema schema.
+   * @param name table name.
+   */
+  public RelationalTable(String catalog, String schema, String name) {
+    super(catalog, schema, name);
+  }
+
+  private String m_type;
+  private String m_typeName;
 
   private Multimap<List<String>, RelationalIndex> m_indicesByColumns;
 
@@ -53,20 +71,17 @@ public class RelationalTable extends RelationalIndex implements Serializable {
   /**
    * Set the indices.
    * @param indices The indices to set
-   * @throws RelationalValidationException If adding an index not recognized by the current table
+   * @throws InconsistentSchemaException If adding an index not recognized by the current table
    */
-  public void setIndices(List<RelationalIndex> indices) throws RelationalValidationException {
+  public void setIndices(List<RelationalIndex> indices) throws InconsistentSchemaException {
     ImmutableMultimap.Builder<List<String>, RelationalIndex> indexMapBuilder = ImmutableListMultimap.builder();
 
-    if (m_table == null) {
-      throw new RelationalValidationException("Trying to add indices without setting a table!");
+    if (getName() == null) {
+      throw new InconsistentSchemaException("Trying to add indices without setting a table!");
     } else {
       for (RelationalIndex ri : indices) {
-        Table i = ri.getTable();
-        if ((i.getCatalog() != null && !i.getCatalog().equals(m_table.getCatalog()))
-            || (i.getSchema() != null && !i.getSchema().equals(m_table.getSchema()))
-            || (i.getName() != null && m_table.getIndexNames() != null && !m_table.getIndexNames().contains(i.getName()))) {
-          throw new RelationalValidationException("Trying to add an index not recognized by this table: " + i);
+        if (!getCatalogSchema().equals(ri.getCatalogSchema())) {
+          throw new InconsistentSchemaException("Index " + ri.getName() + " and table " + getName() + " belong to different catalogs or schemas.");
         }
 
         indexMapBuilder.put(ri.getColumnNames(), ri);
@@ -93,31 +108,41 @@ public class RelationalTable extends RelationalIndex implements Serializable {
   /**
    * Set the fks.
    * @param fks The fks to set
-   * @throws RelationalValidationException If mismatch between the added fk's and the table
+   * @throws InconsistentSchemaException If mismatch between the added fk's and the table
    */
-  public void setFks(Set<ForeignKey> fks) throws RelationalValidationException {
+  public void setFks(Set<ForeignKey> fks) throws InconsistentSchemaException {
     m_fks = fks;
     m_fksByName = HashMultimap.create();
     m_fksByTableColumn = HashMultimap.create();
 
-    if (m_table == null) {
-      throw new RelationalValidationException("Adding fk's before a table is defined!");
-    } else {
-      // Check validity of fk's and then add them to the search index
-      for (ForeignKey fk : fks) {
-        if ((fk.getFkCatalog() != null && !fk.getFkCatalog().equals(m_table.getCatalog()))
-            || (fk.getFkSchema() != null && !fk.getFkSchema().equals(m_table.getSchema()))
-            || (fk.getFkTable() != null && !fk.getFkTable().equals(m_table.getName()))) {
-          throw new RelationalValidationException("Trying to add a fk which doesn't match this table:" + fk);
-        }
-
-        //The fk is valid.  Add it to the search indices
-        m_fksByName.put(fk.getFkName(), fk);
-
-        String key = fk.getPkCatalog() + "." + fk.getPkSchema() + "." + fk.getPkTable() + "." + fk.getPkColumn();
-        m_fksByTableColumn.put(key, fk);
+    // Check validity of fk's and then add them to the search index
+    for (ForeignKey fk : fks) {
+      if (!getCatalogSchema().equals(fk.getFkCatalogSchema()) || !getName().equals(fk.getFkTable())) {
+        throw new InconsistentSchemaException("Foreign key " + fk + " does not match table " + getName());
       }
+
+      //The fk is valid.  Add it to the search indices
+      m_fksByName.put(fk.getFkName(), fk);
+
+      String key = fk.getPkCatalogSchema().getCatalog() + "." + fk.getPkCatalogSchema().getSchema() + "." + fk.getPkTable() + "." + fk.getPkColumn();
+      m_fksByTableColumn.put(key, fk);
     }
+  }
+
+  public String getType() {
+    return m_type;
+  }
+
+  public void setType(String type) {
+    m_type = type;
+  }
+
+  public String getTypeName() {
+    return m_typeName;
+  }
+
+  public void setTypeName(String typeName) {
+    m_typeName = typeName;
   }
 
   /**

@@ -16,22 +16,21 @@
 
 package com.vecna.dbDiff.hibernate;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 
 import org.hibernate.cfg.Configuration;
 
+import com.vecna.dbDiff.builder.RelationalDatabaseBuilder;
+import com.vecna.dbDiff.builder.RelationalDatabaseBuilderImpl;
 import com.vecna.dbDiff.business.catalogSchema.impl.DefaultCatalogSchemaResolverFactory;
 import com.vecna.dbDiff.business.dbCompare.impl.RdbCompareError;
 import com.vecna.dbDiff.business.dbCompare.impl.RdbDiffEngine;
-import com.vecna.dbDiff.business.relationalDb.impl.RelationalDatabaseBeanImpl;
-import com.vecna.dbDiff.dao.MetadataDao;
-import com.vecna.dbDiff.dao.impl.GenericMetadataDaoImpl;
+import com.vecna.dbDiff.jdbc.ThreadLocalMetadataFactory;
 import com.vecna.dbDiff.model.CatalogSchema;
 import com.vecna.dbDiff.model.relationalDb.RelationalDatabase;
-import com.vecna.dbDiff.model.relationalDb.RelationalValidationException;
+import com.vecna.dbDiff.model.relationalDb.InconsistentSchemaException;
 
 /**
  * Compares hibernate configuration schema to the schema of the live database the configuration points to.
@@ -51,10 +50,10 @@ public class HibernateSchemaValidator {
   /**
    * Compare schemas
    * @return list of schema differences
-   * @throws RelationalValidationException if schemas can't be retrieved/built
+   * @throws InconsistentSchemaException if schemas can't be retrieved/built
    * @throws SQLException if live schema can't be retrieved
    */
-  public List<RdbCompareError> validate() throws RelationalValidationException, SQLException {
+  public List<RdbCompareError> validate() throws InconsistentSchemaException, SQLException {
     String jdbcDriver = m_configuration.getProperty("hibernate.connection.driver_class");
     String jdbcUrl = m_configuration.getProperty("hibernate.connection.url");
     String jdbcUser = m_configuration.getProperty("hibernate.connection.username");
@@ -65,20 +64,13 @@ public class HibernateSchemaValidator {
 
     RelationalDatabase hibernateSchema = new HibernateMappingsConverter(catalogSchema, m_configuration).convert();
 
-    Connection conn;
-
-    conn = DriverManager.getConnection(jdbcUrl, jdbcUser, jdbcPassword);
-
     RelationalDatabase liveSchema;
 
-    try {
-      MetadataDao metadataDao = new GenericMetadataDaoImpl(conn);
-      RelationalDatabaseBeanImpl rdbBean = new RelationalDatabaseBeanImpl();
-      rdbBean.setMetadataDao(metadataDao);
-      CatalogSchema cs = new CatalogSchema(null, "public");
-      liveSchema = rdbBean.createRelationalDatabase(cs);
-    } finally {
-      conn.close();
+    try (ThreadLocalMetadataFactory factory = new ThreadLocalMetadataFactory(jdbcUrl, jdbcUser, jdbcPassword)) {
+      RelationalDatabaseBuilder builder = new RelationalDatabaseBuilderImpl(factory);
+      liveSchema = builder.createRelationalDatabase(CatalogSchema.defaultCatalogSchema());
+    } catch (IOException e) {
+      throw new SQLException(e);
     }
 
     return new RdbDiffEngine().compareRelationalDatabase(hibernateSchema, liveSchema);

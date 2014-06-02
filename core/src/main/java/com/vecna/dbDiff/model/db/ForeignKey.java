@@ -16,32 +16,26 @@
 
 package com.vecna.dbDiff.model.db;
 
-import java.io.Serializable;
-
 import com.google.common.base.Objects;
+import com.vecna.dbDiff.model.CatalogSchema;
 
 
 /**
  * A model of a database foreign key
  * @author dlopuch@vecna.com
  */
-public class ForeignKey implements Serializable {
-
-  private static final long serialVersionUID = -7159861052889939307L;
-
+public class ForeignKey {
   //Constraint name
   private String m_fkName;
   private String m_keySeq;
 
   //Table and column the FK belongs to, ResultSet 5-8
-  private String m_fkCatalog;
-  private String m_fkSchema;
+  private CatalogSchema m_fkCatalogSchema;
   private String m_fkTable;
   private String m_fkColumn;
 
   //Table and column the FK points to, ResultSet 1-4
-  private String m_pkCatalog;
-  private String m_pkSchema;
+  private CatalogSchema m_pkCatalogSchema;
   private String m_pkTable;
   private String m_pkColumn;
   /**
@@ -72,34 +66,7 @@ public class ForeignKey implements Serializable {
   public String getKeySeq() {
     return m_keySeq;
   }
-  /**
-   * Set the fkCatalog.
-   * @param fkCatalog The fkCatalog to set
-   */
-  public void setFkCatalog(String fkCatalog) {
-    m_fkCatalog = fkCatalog;
-  }
-  /**
-   * Get the fkCatalog.
-   * @return Returns the fkCatalog
-   */
-  public String getFkCatalog() {
-    return m_fkCatalog;
-  }
-  /**
-   * Set the fkSchema.
-   * @param fkSchema The fkSchema to set
-   */
-  public void setFkSchema(String fkSchema) {
-    m_fkSchema = fkSchema;
-  }
-  /**
-   * Get the fkSchema.
-   * @return Returns the fkSchema
-   */
-  public String getFkSchema() {
-    return m_fkSchema;
-  }
+
   /**
    * Set the fkTable.
    * @param fkTable The fkTable to set
@@ -128,34 +95,7 @@ public class ForeignKey implements Serializable {
   public String getFkColumn() {
     return m_fkColumn;
   }
-  /**
-   * Set the pkCatalog.
-   * @param pkCatalog The pkCatalog to set
-   */
-  public void setPkCatalog(String pkCatalog) {
-    m_pkCatalog = pkCatalog;
-  }
-  /**
-   * Get the pkCatalog.
-   * @return Returns the pkCatalog
-   */
-  public String getPkCatalog() {
-    return m_pkCatalog;
-  }
-  /**
-   * Set the pkSchema.
-   * @param pkSchema The pkSchema to set
-   */
-  public void setPkSchema(String pkSchema) {
-    m_pkSchema = pkSchema;
-  }
-  /**
-   * Get the pkSchema.
-   * @return Returns the pkSchema
-   */
-  public String getPkSchema() {
-    return m_pkSchema;
-  }
+
   /**
    * Set the pkTable.
    * @param pkTable The pkTable to set
@@ -185,10 +125,26 @@ public class ForeignKey implements Serializable {
     return m_pkColumn;
   }
 
+  public CatalogSchema getFkCatalogSchema() {
+    return m_fkCatalogSchema;
+  }
+
+  public CatalogSchema getPkCatalogSchema() {
+    return m_pkCatalogSchema;
+  }
+
+  public void setFkCatalogSchema(CatalogSchema fkCatalogSchema) {
+    m_fkCatalogSchema = fkCatalogSchema;
+  }
+
+  public void setPkCatalogSchema(CatalogSchema pkCatalogSchema) {
+    m_pkCatalogSchema = pkCatalogSchema;
+  }
+
   @Override
   public int hashCode() {
-    return Objects.hashCode(37, m_pkCatalog, m_pkSchema, m_pkTable, m_pkColumn,
-                            m_fkCatalog, m_fkSchema, m_fkTable, m_fkColumn,
+    return Objects.hashCode(37, m_pkCatalogSchema, m_pkTable, m_pkColumn,
+                            m_fkCatalogSchema, m_fkTable, m_fkColumn,
                             m_fkName, m_keySeq);
   }
 
@@ -214,8 +170,7 @@ public class ForeignKey implements Serializable {
    * @return True if the two fk's point to the same column
    */
   public boolean equalsReference(ForeignKey other) {
-    return Objects.equal(m_pkCatalog, other.getPkCatalog())
-            && Objects.equal(m_pkSchema, other.getPkSchema())
+    return Objects.equal(m_pkCatalogSchema, other.getPkCatalogSchema())
             && Objects.equal(m_pkTable, other.getPkTable())
             && Objects.equal(m_pkColumn, other.getPkColumn());
   }
@@ -227,8 +182,7 @@ public class ForeignKey implements Serializable {
    * @return True if the two fk's point from the same column
    */
   public boolean equalsFrom(ForeignKey other) {
-    return Objects.equal(m_fkCatalog, other.getFkCatalog())
-            && Objects.equal(m_fkSchema, other.getFkSchema())
+    return Objects.equal(m_fkCatalogSchema, other.getFkCatalogSchema())
             && Objects.equal(m_fkTable, other.getFkTable())
             && Objects.equal(m_fkColumn, other.getFkColumn());
   }

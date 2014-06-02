@@ -16,10 +16,11 @@
 
 package com.vecna.dbDiff.model.db;
 
-import java.io.Serializable;
 import java.util.Objects;
 
+import com.vecna.dbDiff.model.CatalogSchema;
 import com.vecna.dbDiff.model.ColumnType;
+import com.vecna.dbDiff.model.relationalDb.NamedSchemaItem;
 
 
 
@@ -27,63 +28,39 @@ import com.vecna.dbDiff.model.ColumnType;
  * A model of a DB Table's column
  * @author dlopuch@vecna.com
  */
-public class Column implements Comparable<Column>, Serializable {
-
-  private static final long serialVersionUID = -1093206125892737605L;
-
-  // Column parent
-  private String m_catalog;
-  private String m_schema;
-  private String m_table;
+public class Column extends NamedSchemaItem implements Comparable<Column> {
+  private final String m_table;
 
   // Column properties
-  private String m_name;
   private String m_default;
   private Boolean m_isNullable;
-
   private Integer m_columnSize;
-
   private Integer m_ordinal;
-
-  private Boolean m_autoIncrement;
-
   private ColumnType m_columnType;
 
   /**
-   * Set the catalog.
-   * @param catalog The catalog to set
+   * Construct a new Column.
+   * @param catalogSchema catalog/schema.
+   * @param name column name.
+   * @param table name of the table that contains the column.
    */
-  public void setCatalog(String catalog) {
-    m_catalog = catalog;
-  }
-  /**
-   * Get the catalog.
-   * @return Returns the catalog
-   */
-  public String getCatalog() {
-    return m_catalog;
-  }
-  /**
-   * Set the schema.
-   * @param schema The schema to set
-   */
-  public void setSchema(String schema) {
-    m_schema = schema;
-  }
-  /**
-   * Get the schema.
-   * @return Returns the schema
-   */
-  public String getSchema() {
-    return m_schema;
-  }
-  /**
-   * Set the table.
-   * @param table The table to set
-   */
-  public void setTable(String table) {
+  public Column(CatalogSchema catalogSchema, String name, String table) {
+    super(catalogSchema, name);
     m_table = table;
   }
+
+  /**
+   * Create a new Column.
+   * @param catalog catalog.
+   * @param schema schema.
+   * @param name column name.
+   * @param table name of the table that contains the column.
+   */
+  public Column(String catalog, String schema, String name, String table) {
+    super(catalog, schema, name);
+    m_table = table;
+  }
+
   /**
    * Get the table.
    * @return Returns the table
@@ -91,20 +68,7 @@ public class Column implements Comparable<Column>, Serializable {
   public String getTable() {
     return m_table;
   }
-  /**
-   * Set the name.
-   * @param name The name to set
-   */
-  public void setName(String name) {
-    m_name = name;
-  }
-  /**
-   * Get the name.
-   * @return Returns the name
-   */
-  public String getName() {
-    return m_name;
-  }
+
   /**
    * Set the default.
    * @param defaultVal The default to set
@@ -112,6 +76,7 @@ public class Column implements Comparable<Column>, Serializable {
   public void setDefault(String defaultVal) {
     m_default = defaultVal;
   }
+
   /**
    * Get the default.
    * @return Returns the default
@@ -208,7 +173,7 @@ public class Column implements Comparable<Column>, Serializable {
 
   @Override
   public int hashCode() {
-    return Objects.hash(m_ordinal, m_name);
+    return Objects.hash(m_ordinal, getName());
   }
 
   /**

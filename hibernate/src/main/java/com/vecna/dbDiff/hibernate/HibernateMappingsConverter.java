@@ -38,7 +38,6 @@ import com.vecna.dbDiff.model.CatalogSchema;
 import com.vecna.dbDiff.model.ColumnType;
 import com.vecna.dbDiff.model.db.Column;
 import com.vecna.dbDiff.model.db.ForeignKey;
-import com.vecna.dbDiff.model.db.Table;
 import com.vecna.dbDiff.model.relationalDb.RelationalDatabase;
 import com.vecna.dbDiff.model.relationalDb.RelationalIndex;
 import com.vecna.dbDiff.model.relationalDb.RelationalTable;
@@ -171,9 +170,7 @@ public class HibernateMappingsConverter {
       tables.add(convertTable(mappedTables.next()));
     }
 
-    RelationalDatabase rdb = new RelationalDatabase();
-    rdb.setTables(tables);
-    return rdb;
+    return new RelationalDatabase(tables);
   }
 
   /**
@@ -182,14 +179,7 @@ public class HibernateMappingsConverter {
    * @return DbDiff table.
    */
   private RelationalTable convertTable(org.hibernate.mapping.Table mappedTable) {
-    RelationalTable table = new RelationalTable();
-    Table tableTable = new Table();
-    tableTable.setName(getTableName(mappedTable));
-
-    tableTable.setSchema(m_catalogSchema.getSchema());
-    tableTable.setCatalog(m_catalogSchema.getCatalog());
-
-    table.setTable(tableTable);
+    RelationalTable table = new RelationalTable(m_catalogSchema, getTableName(mappedTable));
 
     List<Column> columns = new ArrayList<>();
     List<RelationalIndex> indices = new ArrayList<>();
@@ -256,14 +246,8 @@ public class HibernateMappingsConverter {
    * @return a {@link RelationalIndex} representation of the constraint.
    */
   private RelationalIndex getUniqueIndex(RelationalTable table, Column column) {
-    RelationalIndex index = new RelationalIndex();
-    Table tableDef = new Table();
-    tableDef.setCatalog(table.getTable().getCatalog());
-    tableDef.setSchema(table.getTable().getSchema());
-
-    index.setTable(tableDef);
-
-    index.setColumns(new ArrayList<Column>(Collections.singletonList(column)));
+    RelationalIndex index = new RelationalIndex(table.getCatalogSchema(), null);
+    index.setColumns(Collections.singletonList(column));
     return index;
   }
 
@@ -304,16 +288,8 @@ public class HibernateMappingsConverter {
     while (mappedColumns.hasNext()) {
       columns.add(table.getColumnByName(getColumnName(mappedColumns.next())));
     }
-    RelationalIndex index = new RelationalIndex();
-    Table indexTable = new Table();
-    indexTable.setName(name);
-
-    indexTable.setSchema(m_catalogSchema.getSchema());
-    indexTable.setCatalog(m_catalogSchema.getCatalog());
-
-    index.setTable(indexTable);
+    RelationalIndex index = new RelationalIndex(m_catalogSchema, name);
     index.setColumns(columns);
-
     return index;
   }
 
@@ -336,24 +312,18 @@ public class HibernateMappingsConverter {
     }
 
     ForeignKey fkey = new ForeignKey();
-    fkey.setFkCatalog(StringUtils.lowerCase(table.getCatalog()));
+    fkey.setFkCatalogSchema(m_catalogSchema);
     fkey.setFkColumn(getColumnName(column));
     fkey.setFkName(mappedKey.getName().toLowerCase());
-
-    fkey.setFkSchema(m_catalogSchema.getSchema());
-    fkey.setFkCatalog(m_catalogSchema.getCatalog());
 
     fkey.setFkTable(getTableName(table));
 
     fkey.setKeySeq(DEFAULT_KEY_SEQ);
 
-    fkey.setPkCatalog(StringUtils.lowerCase(referencedTable.getCatalog()));
+    fkey.setPkCatalogSchema(m_catalogSchema);
     fkey.setPkColumn(getColumnName(referencedColumn));
 
-    fkey.setPkSchema(m_catalogSchema.getSchema());
-    fkey.setPkCatalog(m_catalogSchema.getCatalog());
     fkey.setPkTable(getTableName(referencedTable));
-
     return fkey;
   }
 
@@ -365,7 +335,7 @@ public class HibernateMappingsConverter {
    * @return a {@link Column} representation of the same column.
    */
   private Column convertColumn(org.hibernate.mapping.Column mappedColumn, org.hibernate.mapping.Table owner, int ordinal) {
-    Column column = new Column();
+    Column column = new Column(m_catalogSchema, getColumnName(mappedColumn), getTableName(owner));
     ColumnType type = new ColumnType(mappedColumn.getSqlTypeCode(m_mapping), mappedColumn.getSqlType(m_dialect, m_mapping));
     column.setColumnType(type);
 
@@ -383,16 +353,12 @@ public class HibernateMappingsConverter {
     }
 
     column.setDefault(mappedColumn.getDefaultValue());
-    column.setName(getColumnName(mappedColumn));
 
     boolean notNull = !mappedColumn.isNullable()
         || (owner.getPrimaryKey() != null && owner.getPrimaryKey().getColumns().contains(mappedColumn));
     column.setIsNullable(!notNull);
 
-    column.setCatalog(StringUtils.lowerCase(owner.getCatalog()));
-    column.setSchema(StringUtils.lowerCase(owner.getSchema()));
     column.setOrdinal(ordinal);
-    column.setTable(getTableName(owner));
 
     column.setDefault(mappedColumn.getDefaultValue());
 

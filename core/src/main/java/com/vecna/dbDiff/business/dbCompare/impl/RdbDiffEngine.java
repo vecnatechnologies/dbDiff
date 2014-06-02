@@ -56,10 +56,10 @@ public class RdbDiffEngine {
 
     // First check every test table exists in the reference db
     for (RelationalTable testT : testDb.getTables()) {
-      RelationalTable refT = refDb.getTableByName(testT.getTable().getName());
+      RelationalTable refT = refDb.getTableByName(testT.getName());
       if (refT == null) {
         RdbCompareError e = new RdbCompareError(RdbCompareErrorType.UNEXPECTED_TABLE,
-                                                "Test table '" + testT.getTable().getName() + "' is not in expected db");
+                                                "Test table '" + testT.getName() + "' is not in expected db");
         errors.add(e);
       } else {
         // If the table exists in ref db, compare the two
@@ -69,9 +69,9 @@ public class RdbDiffEngine {
 
     // Check every reference table exists in the test db
     for (RelationalTable refT : refDb.getTables()) {
-      if (testDb.getTableByName(refT.getTable().getName()) == null) {
+      if (testDb.getTableByName(refT.getName()) == null) {
         RdbCompareError e = new RdbCompareError(RdbCompareErrorType.MISSING_TABLE,
-                                                "Reference Table '" + refT.getTable().getName() + "' is missing");
+                                                "Reference Table '" + refT.getName() + "' is missing");
         errors.add(e);
       }
     }
@@ -114,19 +114,19 @@ public class RdbDiffEngine {
     if (CollectionUtils.isEmpty(refT.getPkColumns())) {
       if (CollectionUtils.isNotEmpty(testT.getPkColumns())) {
         errors.add(new RdbCompareError(RdbCompareErrorType.UNEXPECTED_PRIMARY_KEY,
-                                       "Test primary key " + testT.getTable().getName()
+                                       "Test primary key " + testT.getName()
                                        + testT.getPkColumns() + " is unexpected!"));
       }
     } else if (CollectionUtils.isEmpty(testT.getPkColumns())) {
       if (CollectionUtils.isNotEmpty(refT.getPkColumns())) {
         errors.add(new RdbCompareError(RdbCompareErrorType.MISSING_PRIMARY_KEY,
-                                       "Reference primary key " + refT.getTable().getName()
+                                       "Reference primary key " + refT.getName()
                                        + refT.getPkColumns() + " is missing!"));
       }
     } else if (!refT.getPkColumns().equals(testT.getPkColumns())) {
       errors.add(new RdbCompareError(RdbCompareErrorType.MISCONFIGURED_PRIMARY_KEY,
-                                     "Test primary key " + testT.getTable().getName() + testT.getPkColumns()
-                                     + " differs from reference primary key " + refT.getTable().getName() + refT.getPkColumns()));
+                                     "Test primary key " + testT.getName() + testT.getPkColumns()
+                                     + " differs from reference primary key " + refT.getName() + refT.getPkColumns()));
     }
     return errors;
   }
@@ -145,7 +145,7 @@ public class RdbDiffEngine {
       Column refC = refT.getColumnByName(testC.getName());
       if (refC == null) {
         RdbCompareError e = new RdbCompareError(RdbCompareErrorType.UNEXPECTED_COLUMN,
-                                  "Column '" + testT.getTable().getName() + "." + testC.getName() + "' is unexpected");
+                                  "Column '" + testT.getName() + "." + testC.getName() + "' is unexpected");
         errors.add(e);
       } else {
         //Column is expected.  Check the column properties
@@ -158,34 +158,34 @@ public class RdbDiffEngine {
             errorType = RdbCompareErrorType.COL_TYPE_MISMATCH;
           }
           RdbCompareError e = new RdbCompareError(errorType,
-                                  "Test column '" + testT.getTable().getName() + "." + testC.getName() + "' has wrong type.  "
+                                  "Test column '" + testT.getName() + "." + testC.getName() + "' has wrong type.  "
                                   + "Expected '" + refC.getType() + "/" + refC.getTypeName()
                                   + "' but got '" + testC.getType() + "/" + testC.getTypeName() + "'");
           errors.add(e);
         }
         if (!Objects.equal(refC.getDefault(), testC.getDefault())) {
           RdbCompareError e = new RdbCompareError(RdbCompareErrorType.COL_DEFAULT_MISMATCH,
-                                    "Test column '" + testT.getTable().getName() + "." + testC.getName() + "' has wrong Default.  "
+                                    "Test column '" + testT.getName() + "." + testC.getName() + "' has wrong Default.  "
                                     + "Expected '" + refC.getDefault() + "' but got '" + testC.getDefault() + "'");
           errors.add(e);
         }
         if (!Objects.equal(refC.getIsNullable(), testC.getIsNullable())) {
           RdbCompareError e = new RdbCompareError(RdbCompareErrorType.COL_NULLABLE_MISMATCH,
-                                    "Test column '" + testT.getTable().getName() + "." + testC.getName() + "' has wrong "
+                                    "Test column '" + testT.getName() + "." + testC.getName() + "' has wrong "
                                     + "nullability.  Expected '" + refC.getIsNullable() + "' but got '"
                                     + testC.getIsNullable() + "'");
           errors.add(e);
         }
         if (refC.getColumnSize() != null && testC.getColumnSize() != null && !refC.getColumnSize().equals(testC.getColumnSize())) {
           RdbCompareError e = new RdbCompareError(RdbCompareErrorType.COL_SIZE_MISMATCH,
-                                    "Test column '" + testT.getTable().getName() + "." + testC.getName() + "' has wrong size.  "
+                                    "Test column '" + testT.getName() + "." + testC.getName() + "' has wrong size.  "
                                     + "Expected '" + refC.getColumnSize() + "' but got '" + testC.getColumnSize() + "'");
           errors.add(e);
         }
         if (!Objects.equal(refC.getOrdinal(), refC.getOrdinal())) {
           //TODO: Turn this into a warning?
           RdbCompareError e = new RdbCompareError(RdbCompareErrorType.COL_ORDINAL_MISMATCH,
-                                    "Test column '" + testT.getTable().getName() + "." + testC.getName() + "' has wrong ordinal.  "
+                                    "Test column '" + testT.getName() + "." + testC.getName() + "' has wrong ordinal.  "
                                     + "Expected '" + refC.getOrdinal() + "' but got '" + testC.getOrdinal() + "'");
           errors.add(e);
         }
@@ -196,7 +196,7 @@ public class RdbDiffEngine {
     for (Column refC : refT.getColumns()) {
       if (testT.getColumnByName(refC.getName()) == null) {
         RdbCompareError e = new RdbCompareError(RdbCompareErrorType.MISSING_COLUMN,
-                                  "Table '" + testT.getTable().getName() + "' is missing column '" + refC.getName() + "'");
+                                  "Table '" + testT.getName() + "' is missing column '" + refC.getName() + "'");
         errors.add(e);
       }
     }
@@ -225,7 +225,7 @@ public class RdbDiffEngine {
           } else {
             //FK with the same signature and name, but wrong key sequence
             return new ForeignKeyCompareError(RdbCompareErrorType.FK_SEQUENCE_MISMATCH,
-                                              "Test fk '" + testFk.getFkName() + "' in table '" + testT.getTable().getName() + "' has"
+                                              "Test fk '" + testFk.getFkName() + "' in table '" + testT.getName() + "' has"
                                                   + " wrong key sequence. Expected '" + refFk.getKeySeq() + "' but got '"
                                                   + testFk.getKeySeq() + "'", refFk);
           }
@@ -239,7 +239,7 @@ public class RdbDiffEngine {
                                             + "constraint(s) but different signature: " + matchingFkNames, null);
     } else {
       //Try to find a match based on reference
-      Set<ForeignKey> refFksByRefCol = refT.getFksByReferencedCol(testFk.getPkCatalog(), testFk.getPkSchema(),
+      Set<ForeignKey> refFksByRefCol = refT.getFksByReferencedCol(testFk.getPkCatalogSchema().getCatalog(), testFk.getPkCatalogSchema().getSchema(),
                                                                   testFk.getPkTable(), testFk.getPkColumn());
       if (!refFksByRefCol.isEmpty()) {
         for (ForeignKey refFk : refFksByRefCol) {
@@ -326,19 +326,19 @@ public class RdbDiffEngine {
         Set<String> refIndexNames = Sets.newHashSet();
 
         for (RelationalIndex refIndex : matchingRefIndices) {
-          if (refIndex.getTable().getName() == null) {
+          if (refIndex.getName() == null) {
             refIndicesWithUnknownNames++;
           } else {
-            refIndexNames.add(refIndex.getTable().getName());
+            refIndexNames.add(refIndex.getName());
           }
         }
 
         for (RelationalIndex testIndex : entry.getValue()) {
-          if (testIndex.getTable().getName() == null) {
+          if (testIndex.getName() == null) {
             testIndicesWithUnknownNames++;
           } else {
-            if (!refIndexNames.remove(testIndex.getTable().getName())) {
-              testIndexNames.add(testIndex.getTable().getName());
+            if (!refIndexNames.remove(testIndex.getName())) {
+              testIndexNames.add(testIndex.getName());
             }
           }
         }
@@ -393,7 +393,7 @@ public class RdbDiffEngine {
    */
   private String getIndexDesc(String indexName, Collection<String> columnNames, RelationalTable owner) {
     return (indexName == null ? "<UNKNOWN>" : indexName) + "="
-    + owner.getTable().getName() + "(" + Joiner.on(',').join(columnNames) + ")";
+    + owner.getName() + "(" + Joiner.on(',').join(columnNames) + ")";
   }
 
   /**
@@ -403,7 +403,7 @@ public class RdbDiffEngine {
    * @return a human-readable description of the index.
    */
   private String getIndexDesc(RelationalIndex idx, RelationalTable owner) {
-    return getIndexDesc(idx.getTable().getName(), Collections2.transform(idx.getColumns(), new Function<Column, String>() {
+    return getIndexDesc(idx.getName(), Collections2.transform(idx.getColumns(), new Function<Column, String>() {
       @Override
       public String apply(Column from) {
         return from.getName();

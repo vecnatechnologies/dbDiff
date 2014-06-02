@@ -16,13 +16,10 @@
 
 package com.vecna.dbDiff.model.relationalDb;
 
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
-
-import com.google.common.collect.Maps;
 
 /**
  * A Serializable collection of RelationalTables, representing a db.
@@ -31,40 +28,35 @@ import com.google.common.collect.Maps;
  *
  * @author dlopuch@vecna.com
  */
-public class RelationalDatabase implements Serializable {
-
-  private static final long serialVersionUID = -85351066652741366L;
-
-  private Map<String, RelationalTable> m_tablesByName;
+public class RelationalDatabase {
+  private final Map<String, RelationalTable> m_tablesByName;
 
   /**
-   * Set the tables.
-   * @param tables The tables to set.  All tables must have unique names or be of the same schema/catalog
-   * @throws RelationalValidationException If non-unique table name detected
+   * Construct a new instance.
+   * @param tables ordered collection of tables.
    */
-  public void setTables(List<RelationalTable> tables) throws RelationalValidationException {
-    m_tablesByName = Maps.newLinkedHashMap();
+  public RelationalDatabase(Collection<RelationalTable> tables) {
+    m_tablesByName = new LinkedHashMap<>(tables.size());
     for (RelationalTable rt : tables) {
-      if (m_tablesByName.containsKey(rt.getTable().getName())) {
-        throw new RelationalValidationException("A RelationalDatabase supports only unique table names of tables of the same "
-            + "catalog/schema. Non-unique name found: " + rt.getTable().getName());
+      if (m_tablesByName.containsKey(rt.getName())) {
+        throw new InconsistentSchemaException("A RelationalDatabase supports only unique table names of tables of the same "
+            + "catalog/schema. Non-unique name found: " + rt.getName());
       }
-      m_tablesByName.put(rt.getTable().getName(), rt);
+      m_tablesByName.put(rt.getName(), rt);
     }
   }
 
   /**
-   * Get the tables. Do NOT modify these tables -- doing so will mess up internal search indexes!
-   * @return Returns the tables.
+   * @return ordered collection of tables in this database.
    */
   public Collection<RelationalTable> getTables() {
     return Collections.unmodifiableCollection(m_tablesByName.values());
   }
 
   /**
-   * Gets a specific relationalTable by name.
-   * @param tableName the Name of the table
-   * @return the RelationalTable
+   * Gets a specific table by name.
+   * @param tableName the name of the table.
+   * @return the table with the given name.
    */
   public RelationalTable getTableByName(String tableName) {
     return m_tablesByName.get(tableName);

@@ -12,33 +12,52 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
  * implied.  See the License for the specific language governing
  * permissions and limitations under the License.
-*/
+ */
 
 package com.vecna.dbDiff.model.relationalDb;
 
 import com.vecna.dbDiff.model.CatalogSchema;
 
 /**
- * A relational table model which contains appropriate columns and indices
- * @author dlopuch@vecna.com
+ * DB schema item with name, catalog, and schema.
+ *
+ * @author ogolberg@vecna.com
  */
-public class RelationalIndex extends BaseColumnContainer {
+public abstract class NamedSchemaItem {
+  private final CatalogSchema m_catalogSchema;
+  private final String m_name;
+
   /**
-   * Create a new index.
+   * Create a new instance.
    * @param catalogSchema catalog/schema.
-   * @param name index name.
+   * @param name name.
    */
-  public RelationalIndex(CatalogSchema catalogSchema, String name) {
-    super(catalogSchema, name);
+  public NamedSchemaItem(CatalogSchema catalogSchema, String name) {
+    m_catalogSchema = catalogSchema;
+    m_name = name;
   }
 
   /**
-   * Create a new index.
+   * Create a new instance.
    * @param catalog catalog.
    * @param schema schema.
-   * @param name index name.
+   * @param name name.
    */
-  public RelationalIndex(String catalog, String schema, String name) {
-    super(catalog, schema, name);
+  public NamedSchemaItem(String catalog, String schema, String name) {
+    this(new CatalogSchema(catalog, schema), name);
+  }
+
+  /**
+   * @return catalog/schema.
+   */
+  public CatalogSchema getCatalogSchema() {
+    return m_catalogSchema;
+  }
+
+  /**
+   * @return name.
+   */
+  public String getName() {
+    return m_name;
   }
 }
