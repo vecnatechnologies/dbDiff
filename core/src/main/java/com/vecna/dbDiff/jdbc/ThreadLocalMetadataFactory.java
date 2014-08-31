@@ -36,7 +36,7 @@ public class ThreadLocalMetadataFactory implements MetadataFactory {
     @Override
     protected DatabaseMetaData initialValue() {
       try {
-        Connection connection = DriverManager.getConnection(m_url, m_password, m_username);
+        Connection connection = DriverManager.getConnection(m_url, m_username, m_password);
         m_connections.add(connection);
         return connection.getMetaData();
       } catch (SQLException e) {
