@@ -47,7 +47,7 @@ import com.vecna.dbDiff.model.relationalDb.RelationalTable;
  * @author ogolberg@vecna.com
  */
 public class HibernateMappingsConverter {
-  private static final String DEFAULT_KEY_SEQ = "1";
+  private static final int DEFAULT_KEY_SEQ = 1;
   private static final List<DbSpecificMappingInfo> DB_MAPPING =  Arrays.asList(new DbSpecificMappingInfo("PostgreSQL",
                                                                                                          new DbNameTruncateInfo(63, 63),
                                                                                                          new PostgreSqlTypeMapper()));
@@ -202,10 +202,7 @@ public class HibernateMappingsConverter {
     @SuppressWarnings("unchecked")
     Iterator<org.hibernate.mapping.ForeignKey> mappedKeys = mappedTable.getForeignKeyIterator();
     while (mappedKeys.hasNext()) {
-      ForeignKey fkey = convertForeignKey(mappedKeys.next());
-      if (fkey != null) {
-        fkeys.add(fkey);
-      }
+      convertForeignKey(mappedKeys.next(), fkeys);
     }
 
     table.setFks(fkeys);
@@ -294,21 +291,37 @@ public class HibernateMappingsConverter {
   }
 
   /**
-   * Convert a Hibernate foreign key object to a {@link ForeignKey}.
+   * Convert a Hibernate foreign key object to a {@link ForeignKey}, then add to the foreign key (fk) set.
+   * For composite fk each column is converted to a {@link ForeignKey} with a unique sequence number.
    * @param mappedKey hibernate foreign key.
+   * @param fkeys a {@link ForeignKey} Set.
+   */
+  private void convertForeignKey(org.hibernate.mapping.ForeignKey mappedKey, Set<ForeignKey> fkeys) {
+    for (int i = 0; i < mappedKey.getColumns().size(); i++) {
+      ForeignKey fkey = convertForeignKey(mappedKey, i);
+      if (fkey != null) {
+        fkeys.add(fkey);
+      }
+    }
+  }
+
+  /**
+   * Convert a Hibernate foreign key object to a {@link ForeignKey}
+   * @param mappedKey hibernate foreign key.
+   * @param columnIndex 0-based index of the column in a foreign key.
    * @return a {@link ForeignKey} representation of the same foreign key.
    */
-  private ForeignKey convertForeignKey(org.hibernate.mapping.ForeignKey mappedKey) {
-    org.hibernate.mapping.Column column = mappedKey.getColumn(0);
+  private ForeignKey convertForeignKey(org.hibernate.mapping.ForeignKey mappedKey, int columnIndex) {
+    org.hibernate.mapping.Column column = mappedKey.getColumn(columnIndex);
     org.hibernate.mapping.Table table = mappedKey.getTable();
 
     org.hibernate.mapping.Table referencedTable = mappedKey.getReferencedTable();
     org.hibernate.mapping.Column referencedColumn;
 
     if (mappedKey.getReferencedColumns().size() == 0) {
-      referencedColumn = referencedTable.getPrimaryKey().getColumn(0);
+      referencedColumn = referencedTable.getPrimaryKey().getColumn(columnIndex);
     } else {
-      referencedColumn = (org.hibernate.mapping.Column) mappedKey.getReferencedColumns().get(0);
+      referencedColumn = (org.hibernate.mapping.Column) mappedKey.getReferencedColumns().get(columnIndex);
     }
 
     ForeignKey fkey = new ForeignKey();
@@ -318,7 +331,7 @@ public class HibernateMappingsConverter {
 
     fkey.setFkTable(getTableName(table));
 
-    fkey.setKeySeq(DEFAULT_KEY_SEQ);
+    fkey.setKeySeq(String.valueOf(DEFAULT_KEY_SEQ + columnIndex));
 
     fkey.setPkCatalogSchema(m_catalogSchema);
     fkey.setPkColumn(getColumnName(referencedColumn));

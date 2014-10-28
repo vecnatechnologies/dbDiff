@@ -224,7 +224,9 @@ public class RelationalDatabaseBuilderImpl implements RelationalDatabaseBuilder 
 
     for (RelationalIndex index : indices) {
       List<Column> columns = new ArrayList<>(idxColumns.size());
-      for (String columnName : idxColumns.get(index.getName())) {
+      for (String idxColumnName : idxColumns.get(index.getName())) {
+        // Some db preserved names are double-quoted
+        String columnName = idxColumnName.replaceAll("^\"|\"$", "");
         Column column = table.getColumnByName(columnName);
 
         if (column == null) {
