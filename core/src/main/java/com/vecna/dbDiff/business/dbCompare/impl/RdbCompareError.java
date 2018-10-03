@@ -23,31 +23,41 @@ package com.vecna.dbDiff.business.dbCompare.impl;
  * @author dlopuch@vecna.com
  */
 public class RdbCompareError {
-  private final RdbCompareErrorType m_errorType;
-  private final String m_message;
+  private final RdbCompareErrorType errorType;
+  private final String message;
+  private final RdbFoundOnSide foundOn;
 
   /**
    * Create a new instance.
    *
    * @param errorType type of schema difference.
    * @param message descriptive message.
+   * @param foundOn indicates whether an extra thing was found on the Ref or Test side.
    */
-  public RdbCompareError(RdbCompareErrorType errorType, String message) {
-    m_errorType = errorType;
-    m_message = message;
+  public RdbCompareError(RdbCompareErrorType errorType, String message, RdbFoundOnSide foundOn) {
+    this.errorType = errorType;
+    this.message = message;
+    this.foundOn = foundOn;
   }
 
   /**
    * @return type of the schema difference.
    */
   public RdbCompareErrorType getErrorType() {
-    return m_errorType;
+    return errorType;
   }
 
   /**
    * @return descriptive message.
    */
   public String getMessage() {
-    return m_message;
+    return message;
+  }
+
+  /**
+   * @return found on side.
+   */
+  public RdbFoundOnSide getFoundOn() {
+    return foundOn;
   }
 }

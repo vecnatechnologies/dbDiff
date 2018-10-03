@@ -24,7 +24,7 @@ import com.vecna.dbDiff.model.db.ForeignKey;
  * @author ogolberg@vecna.com
  */
 public class ForeignKeyCompareError extends RdbCompareError {
-  private ForeignKey m_similarFk;
+  private ForeignKey similarFk;
 
   /**
    * Create a new foreign key error.
@@ -33,14 +33,14 @@ public class ForeignKeyCompareError extends RdbCompareError {
    * @param similarFk existing foreign key similar to the foreign key being tested.
    */
   public ForeignKeyCompareError(RdbCompareErrorType errorType, String message, ForeignKey similarFk) {
-    super(errorType, message);
-    m_similarFk = similarFk;
+    super(errorType, message, RdbFoundOnSide.UNSPECIFIED);
+    this.similarFk = similarFk;
   }
 
   /**
    * @return an existing foreign key similar to the foreign key being tested
    */
   public ForeignKey getSimilarFk() {
-    return m_similarFk;
+    return similarFk;
   }
 }
