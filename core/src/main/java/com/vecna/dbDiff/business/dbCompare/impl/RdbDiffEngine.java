@@ -59,7 +59,8 @@ public class RdbDiffEngine {
       RelationalTable refT = refDb.getTableByName(testT.getName());
       if (refT == null) {
         RdbCompareError e = new RdbCompareError(RdbCompareErrorType.UNEXPECTED_TABLE,
-                                                "Test table '" + testT.getName() + "' is not in expected db");
+                                                "Test table '" + testT.getName() + "' is not in expected db",
+                                                RdbFoundOnSide.TEST);
         errors.add(e);
       } else {
         // If the table exists in ref db, compare the two
@@ -71,7 +72,8 @@ public class RdbDiffEngine {
     for (RelationalTable refT : refDb.getTables()) {
       if (testDb.getTableByName(refT.getName()) == null) {
         RdbCompareError e = new RdbCompareError(RdbCompareErrorType.MISSING_TABLE,
-                                                "Reference Table '" + refT.getName() + "' is missing");
+                                                "Reference Table '" + refT.getName() + "' is missing",
+                                                 RdbFoundOnSide.REF);
         errors.add(e);
       }
     }
@@ -115,18 +117,21 @@ public class RdbDiffEngine {
       if (CollectionUtils.isNotEmpty(testT.getPkColumns())) {
         errors.add(new RdbCompareError(RdbCompareErrorType.UNEXPECTED_PRIMARY_KEY,
                                        "Test primary key " + testT.getName()
-                                       + testT.getPkColumns() + " is unexpected!"));
+                                       + testT.getPkColumns() + " is unexpected!",
+                                       RdbFoundOnSide.TEST));
       }
     } else if (CollectionUtils.isEmpty(testT.getPkColumns())) {
       if (CollectionUtils.isNotEmpty(refT.getPkColumns())) {
         errors.add(new RdbCompareError(RdbCompareErrorType.MISSING_PRIMARY_KEY,
                                        "Reference primary key " + refT.getName()
-                                       + refT.getPkColumns() + " is missing!"));
+                                       + refT.getPkColumns() + " is missing!",
+                                       RdbFoundOnSide.REF));
       }
     } else if (!refT.getPkColumns().equals(testT.getPkColumns())) {
       errors.add(new RdbCompareError(RdbCompareErrorType.MISCONFIGURED_PRIMARY_KEY,
                                      "Test primary key " + testT.getName() + testT.getPkColumns()
-                                     + " differs from reference primary key " + refT.getName() + refT.getPkColumns()));
+                                     + " differs from reference primary key " + refT.getName() + refT.getPkColumns(),
+                                     RdbFoundOnSide.UNSPECIFIED));
     }
     return errors;
   }
@@ -145,7 +150,8 @@ public class RdbDiffEngine {
       Column refC = refT.getColumnByName(testC.getName());
       if (refC == null) {
         RdbCompareError e = new RdbCompareError(RdbCompareErrorType.UNEXPECTED_COLUMN,
-                                  "Column '" + testT.getName() + "." + testC.getName() + "' is unexpected");
+                                  "Column '" + testT.getName() + "." + testC.getName() + "' is unexpected",
+                                   RdbFoundOnSide.TEST);
         errors.add(e);
       } else {
         //Column is expected.  Check the column properties
@@ -160,33 +166,38 @@ public class RdbDiffEngine {
           RdbCompareError e = new RdbCompareError(errorType,
                                   "Test column '" + testT.getName() + "." + testC.getName() + "' has wrong type.  "
                                   + "Expected '" + refC.getType() + "/" + refC.getTypeName()
-                                  + "' but got '" + testC.getType() + "/" + testC.getTypeName() + "'");
+                                  + "' but got '" + testC.getType() + "/" + testC.getTypeName() + "'",
+                                  RdbFoundOnSide.UNSPECIFIED);
           errors.add(e);
         }
         if (!Objects.equal(refC.getDefault(), testC.getDefault())) {
           RdbCompareError e = new RdbCompareError(RdbCompareErrorType.COL_DEFAULT_MISMATCH,
                                     "Test column '" + testT.getName() + "." + testC.getName() + "' has wrong Default.  "
-                                    + "Expected '" + refC.getDefault() + "' but got '" + testC.getDefault() + "'");
+                                    + "Expected '" + refC.getDefault() + "' but got '" + testC.getDefault() + "'",
+                                    RdbFoundOnSide.UNSPECIFIED);
           errors.add(e);
         }
         if (!Objects.equal(refC.getIsNullable(), testC.getIsNullable())) {
           RdbCompareError e = new RdbCompareError(RdbCompareErrorType.COL_NULLABLE_MISMATCH,
                                     "Test column '" + testT.getName() + "." + testC.getName() + "' has wrong "
                                     + "nullability.  Expected '" + refC.getIsNullable() + "' but got '"
-                                    + testC.getIsNullable() + "'");
+                                    + testC.getIsNullable() + "'",
+                                    RdbFoundOnSide.UNSPECIFIED);
           errors.add(e);
         }
         if (refC.getColumnSize() != null && testC.getColumnSize() != null && !refC.getColumnSize().equals(testC.getColumnSize())) {
           RdbCompareError e = new RdbCompareError(RdbCompareErrorType.COL_SIZE_MISMATCH,
                                     "Test column '" + testT.getName() + "." + testC.getName() + "' has wrong size.  "
-                                    + "Expected '" + refC.getColumnSize() + "' but got '" + testC.getColumnSize() + "'");
+                                    + "Expected '" + refC.getColumnSize() + "' but got '" + testC.getColumnSize() + "'",
+                                    RdbFoundOnSide.UNSPECIFIED);
           errors.add(e);
         }
         if (!Objects.equal(refC.getOrdinal(), refC.getOrdinal())) {
           //TODO: Turn this into a warning?
           RdbCompareError e = new RdbCompareError(RdbCompareErrorType.COL_ORDINAL_MISMATCH,
                                     "Test column '" + testT.getName() + "." + testC.getName() + "' has wrong ordinal.  "
-                                    + "Expected '" + refC.getOrdinal() + "' but got '" + testC.getOrdinal() + "'");
+                                    + "Expected '" + refC.getOrdinal() + "' but got '" + testC.getOrdinal() + "'",
+                                    RdbFoundOnSide.UNSPECIFIED);
           errors.add(e);
         }
       }
@@ -196,7 +207,8 @@ public class RdbDiffEngine {
     for (Column refC : refT.getColumns()) {
       if (testT.getColumnByName(refC.getName()) == null) {
         RdbCompareError e = new RdbCompareError(RdbCompareErrorType.MISSING_COLUMN,
-                                  "Table '" + testT.getName() + "' is missing column '" + refC.getName() + "'");
+                                  "Table '" + testT.getName() + "' is missing column '" + refC.getName() + "'",
+                                   RdbFoundOnSide.REF);
         errors.add(e);
       }
     }
@@ -297,7 +309,8 @@ public class RdbDiffEngine {
     //Missing FK's: Any test fk that had some partial match against a reference fk would have had the reference fk removed.
     //Any remaining reference fk's are missing ones.
     for (ForeignKey fk : refFks) {
-      errors.add(new RdbCompareError(RdbCompareErrorType.MISSING_FK, "Reference foreign key \"" + fk + "\" is missing!"));
+      errors.add(new RdbCompareError(RdbCompareErrorType.MISSING_FK, "Reference foreign key \"" + fk + "\" is missing!",
+                         RdbFoundOnSide.REF));
     }
     return errors;
   }
@@ -317,7 +330,8 @@ public class RdbDiffEngine {
       if (CollectionUtils.isEmpty(matchingRefIndices)) {
         for (RelationalIndex testIndex : entry.getValue()) {
           errors.add(new RdbCompareError(RdbCompareErrorType.UNEXPECTED_INDEX,
-                                         "Test index \"" + getIndexDesc(testIndex, testT) + "\" is unexpected!"));
+                                         "Test index \"" + getIndexDesc(testIndex, testT) + "\" is unexpected!",
+                                          RdbFoundOnSide.TEST));
         }
       } else {
         int testIndicesWithUnknownNames = 0;
@@ -346,7 +360,8 @@ public class RdbDiffEngine {
         if (refIndicesWithUnknownNames == 0 && !testIndexNames.isEmpty()) {
           for (String testIndexName : testIndexNames) {
             errors.add(new RdbCompareError(RdbCompareErrorType.UNEXPECTED_INDEX, "Test index \""
-                                           + getIndexDesc(testIndexName, entry.getKey(), testT) + "\" is unexpected!"));
+                                           + getIndexDesc(testIndexName, entry.getKey(), testT) + "\" is unexpected!",
+                                            RdbFoundOnSide.TEST));
           }
         } else if (testIndexNames.size() > refIndicesWithUnknownNames) {
           errors.add(new RdbCompareError(RdbCompareErrorType.UNEXPECTED_INDEX,
@@ -358,14 +373,15 @@ public class RdbDiffEngine {
             public String apply(String from) {
               return "\"" + getIndexDesc(from, entry.getKey(), testT) + "\"";
             }
-          })) + " are unexpected!"));
+          })) + " are unexpected!", RdbFoundOnSide.TEST));
         }
 
 
         if (testIndicesWithUnknownNames == 0 && !refIndexNames.isEmpty()) {
           for (String refIndexName : refIndexNames) {
             errors.add(new RdbCompareError(RdbCompareErrorType.MISSING_INDEX, "Reference index \""
-                                           + getIndexDesc(refIndexName, entry.getKey(), refT) + "\" is missing!"));
+                                           + getIndexDesc(refIndexName, entry.getKey(), refT) + "\" is missing!",
+                    RdbFoundOnSide.REF));
           }
         } else if (refIndexNames.size() > testIndicesWithUnknownNames) {
           errors.add(new RdbCompareError(RdbCompareErrorType.MISSING_INDEX,
@@ -377,7 +393,7 @@ public class RdbDiffEngine {
             public String apply(String from) {
               return "\"" + getIndexDesc(from, entry.getKey(), refT) + "\"";
             }
-          })) + " are missing!"));
+          })) + " are missing!", RdbFoundOnSide.REF));
         }
       }
     }
